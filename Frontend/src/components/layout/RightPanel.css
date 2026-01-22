@@ -1,0 +1,281 @@
+:root{
+  --rp-bg:#0b1220; /* page background (kept) */
+  --rp-tile:#6b4226; /* warm brown tile background */
+  --rp-tile-dark:#54321f; /* darker brown for gradient */
+  --rp-accent:#b7885a; /* warm accent */
+  --rp-text:#ffffff; /* white text on tiles */
+}
+
+:root{
+  --rp-top-padding: 8px;
+}
+
+.right-panel{
+  padding: 8px 16px !important;
+  background: #ffffff !important; /* force white background for the whole right panel */
+  color: #111; /* dark text for anything outside tiles */
+}
+:root{
+  --rp-panel-bg: #ffffff; /* right panel background */
+  --rp-tile-1: #7a4f32; /* warm brown */
+  --rp-tile-2: #5d3722; /* darker brown */
+  --rp-tile-text: #ffffff; /* white text on tiles */
+  --rp-tile-border: rgba(0,0,0,0.12);
+  --rp-body-text: #0b1220; /* dark body text */
+}
+
+.right-panel{
+  padding: var(--rp-top-padding, 8px) 16px !important;
+  background: var(--rp-panel-bg) !important;
+  color: var(--rp-body-text);
+}
+
+/* Override global .info-tile padding from App.css so the white Current State tile is compact */
+.right-panel .info-tile.current-state {
+  padding: 4px 12px !important;
+  min-height: 0 !important;
+}
+
+.rp-tiles-grid{ display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+/* Keep the overall panel and gaps white. Style each of the three summary sections
+   as a brown card with white text. This prioritizes readability and predictable
+   styling regardless of other global rules. */
+.right-panel .info-section{
+  background: linear-gradient(180deg, var(--rp-tile-1), var(--rp-tile-2)) !important;
+  color: var(--rp-tile-text) !important;
+  padding: 14px 16px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06) !important;
+  border: 1px solid var(--rp-tile-border) !important;
+  margin-bottom: 12px !important;
+}
+
+/* Tighten top alignment: remove panel top padding and reduce spacing around Update Highlights */
+.right-panel { padding-top: 0 !important; }
+
+/* Force current-state tile to be very tight at the top so Update Highlights is flush */
+.right-panel .info-tile.current-state {
+  padding-top: 0 !important;
+  padding-bottom: 8px !important; /* keep a small bottom padding so content doesn't touch edge */
+}
+
+/* Remove any residual margin below the Update Highlights wrapper */
+.right-panel .current-state-head > div:first-child > div,
+.right-panel .current-state-head .highlights-btn {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Tighten the head gap a bit more */
+.right-panel .current-state-head { gap: 4px !important; }
+
+/* Ensure headings and body inside tiles use white text and no inner card backgrounds */
+.right-panel .info-section h4,
+.right-panel .info-section h3,
+.right-panel .info-section .summary-text,
+.right-panel .info-section p,
+.right-panel .info-section ul,
+.right-panel .info-section ol,
+.right-panel .info-section .muted {
+  color: var(--rp-tile-text) !important;
+  background: transparent !important;
+}
+
+/* Make headers visually distinct by increasing weight and spacing */
+.right-panel .info-section h3,
+.right-panel .info-section h4{ font-size: 15px; margin: 0 0 8px 0; font-weight: 700; }
+
+/* Buttons inside the panel should align nicely on brown background */
+.right-panel .prompt-btn,
+.right-panel .highlights-btn{
+  background: rgba(255,255,255,0.12);
+  color: #2563eb !important; /* blue text on white panel for visibility */
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 6px 10px; border-radius: 6px; cursor: pointer;
+}
+
+/* When buttons are inside brown tiles (.info-section), keep them white for contrast */
+.right-panel .info-section .prompt-btn,
+.right-panel .info-section .highlights-btn{
+  color: var(--rp-tile-text) !important;
+  background: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* Make Update Highlights visually a small blue-outline button on the white panel */
+.right-panel .highlights-btn{
+  font-weight: 700 !important;
+  color: #2563eb !important;
+  background: transparent !important;
+  border: 1px solid #2563eb !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 0 rgba(37,99,235,0.08) !important;
+}
+
+/* Preserve white-on-brown appearance when the button is placed inside an .info-section */
+.right-panel .info-section .highlights-btn{
+  color: var(--rp-tile-text) !important;
+  background: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+/* Keep journal tile separate and readable: white card with dark text */
+.right-panel .journal-tile{
+  background: #ffffff !important;
+  color: var(--rp-body-text) !important;
+  padding: 12px 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(2,6,23,0.06) !important;
+  box-shadow: 0 6px 12px rgba(2,6,23,0.04) !important;
+}
+
+/* Make suggestion chips subtle on brown background */
+.right-panel .suggestion-chip{ background: rgba(255,255,255,0.08); color: var(--rp-tile-text) !important; border: none; padding: 6px 10px; border-radius: 6px; }
+
+/* Ensure lists inside tiles look good */
+.right-panel .info-section ul,
+.right-panel .info-section ol{ margin: 6px 0; padding-left: 18px; }
+
+@media(min-width:900px){ .rp-tiles-grid{ grid-template-columns: 1fr; } }
+
+/* Make the small edit/add buttons compact and visually distinct on tile backgrounds */
+.right-panel .info-section .prompt-btn{
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  border: 1px solid rgba(0,0,0,0.9) !important; /* black border to make a clear button */
+  background: rgba(255,255,255,0.06) !important; /* subtle translucent background */
+  color: var(--rp-tile-text) !important;
+  min-width: 34px !important;
+  height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.right-panel .info-section .prompt-btn:hover{
+  background: rgba(255,255,255,0.12) !important;
+  transform: translateY(-1px);
+}
+
+/* Golden styling for add button */
+.right-panel .info-section .add-btn{
+  /* lighter gold for better contrast on brown tiles, with white icon/text */
+  background: linear-gradient(90deg, #ffd36b, #ffeaa0) !important;
+  border: 1px solid #e0b33a !important;
+  color: #ffffff !important; /* white text/icon for high contrast */
+  box-shadow: 0 3px 8px rgba(224,179,58,0.12) !important;
+}
+.right-panel .info-section .add-btn:hover{
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 18px rgba(224,179,58,0.18) !important;
+}
+
+/* Slightly different appearance when a prompt-btn lives on the white panel (like Delete Chat) */
+.right-panel > .right-panel__section .prompt-btn{
+  color: #2563eb !important;
+  background: transparent !important;
+  border: 1px solid rgba(37,99,235,0.16) !important;
+}
+
+.right-panel .info-section .summary-text,
+.right-panel .info-section h4,
+.right-panel .info-section .muted,
+.right-panel .info-section p,
+.right-panel .info-section ul,
+.right-panel .info-section ol {
+  color: var(--rp-text) !important;
+  background: transparent !important;
+}
+
+/* Final override: ensure add-btn shows white '+' and lighter gold background on brown tiles */
+.right-panel .info-section .prompt-btn.add-btn,
+.right-panel .info-section .prompt-btn.add-btn * {
+  color: #000000 !important; /* black plus/text on yellow */
+  background: linear-gradient(90deg, #ffdf8b, #fff1c6) !important;
+  border: 1px solid rgba(255,215,0,0.35) !important;
+  text-shadow: none !important;
+}
+
+/* Make the golden add button a circular button (32px) and use an SVG inside */
+
+.right-panel .info-section .prompt-btn.add-btn{
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  padding: 0 !important;
+  font-size: 15px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
+}
+
+.right-panel .info-section .prompt-btn.add-btn svg{ width: 14px; height: 14px; }
+
+/* small inline spinner for button loading state */
+.ai-spinner{
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: rgba(255,255,255,0.9);
+  animation: ai-spin 700ms linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+
+/* Make the spinner blue when used inside the white Update Highlights button (visible on white panel) */
+.right-panel .highlights-btn .ai-spinner,
+.right-panel > .right-panel__section .highlights-btn .ai-spinner{
+  border: 2px solid rgba(37,99,235,0.25) !important; /* light blue ring */
+  border-top-color: #2563eb !important; /* visible blue */
+}
+
+/* Preserve white spinner when the button is on a brown tile (info-section) */
+.right-panel .info-section .highlights-btn .ai-spinner{
+  border: 2px solid rgba(255,255,255,0.4) !important;
+  border-top-color: rgba(255,255,255,0.9) !important;
+}
+
+/* Shrink the decorative state-ornament so it doesn't push layout */
+.right-panel .state-ornament svg { width: 34px !important; height: 34px !important; transform: translateY(-2px) !important; opacity: 0.12 !important; }
+
+.right-panel .info-section .prompt-btn.add-btn:hover{
+  transform: translateY(-1px) scale(1.03) !important;
+}
+
+/* inline undo button styling (replaces the add button briefly) */
+.right-panel .info-section .prompt-btn.undo-btn{
+  min-width: auto !important;
+  padding: 4px 8px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  background: rgba(255,255,255,0.06) !important;
+  color: var(--rp-tile-text) !important;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+}
+
+/* keep the journal tile separate and white (the journal-tile already has own rules) */
+.right-panel .journal-tile { background: #ffffff !important; color: #0b1220 !important; }
+
+@media(min-width:900px){
+  .rp-tiles-grid{ grid-template-columns: 1fr; }
+}
+
+/* Center the Update Highlights button text vertically and keep consistent height */
+.right-panel .highlights-btn,
+.right-panel .info-section .highlights-btn{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important; /* fixed height so text centers inside the white tile */
+  padding: 0 10px !important; /* horizontal padding only */
+  line-height: 1 !important;
+}

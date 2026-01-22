@@ -1,0 +1,5 @@
+/* This file intentionally left minimal: the app's canonical styles come from the bundled
+   `src/App.css`. Keeping this file empty prevents the static fallback from overriding
+   the dev-bundled styles during development. */
+
+/* fallback placeholder - no rules */

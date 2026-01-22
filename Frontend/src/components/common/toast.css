@@ -1,0 +1,35 @@
+.ai-toast-root{
+  position: fixed;
+  right: 16px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.ai-toast{
+  pointer-events: auto;
+  min-width: 160px;
+  max-width: 360px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #0b1220;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.12);
+}
+.ai-toast .ai-toast-action{
+  margin-left: 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.ai-toast .ai-toast-action:hover{ background: rgba(0,0,0,0.04); }
+.ai-toast.success{ background: #ecfdf5; border-left: 4px solid #16a34a; }
+.ai-toast.error{ background: #fff1f2; border-left: 4px solid #dc2626; }
+.ai-toast.info{ background: #eff6ff; border-left: 4px solid #2563eb; }
+.ai-toast.warn{ background: #fffbeb; border-left: 4px solid #d97706; }

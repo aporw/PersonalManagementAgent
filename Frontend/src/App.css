@@ -1,0 +1,779 @@
+:root {
+  --panel-border: #c9d8ee;
+  --left-bg: #eef4f8;
+  --chat-bg: #f3eaff; /* light purple */
+  --right-bg: #e9f2ff;
+  /* dark theme overrides (used for left/right dark styling) */
+  --dark-brown: #3b2b2b;
+  --panel-dark: #0b0b0c;
+  --on-dark: #ffffff;
+  --accent: #7b61ff; /* purple accent */
+  --text: #1f2937;
+  --muted: #6b7280;
+  --radius: 10px;
+}
+
+/* Handwriting fonts for journal entries */
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Indie+Flower&family=Caveat&display=swap');
+
+/* Overall page */
+.App {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Ensure root elements allow full-height layouts */
+html, body, #root { height: 100%; margin: 0; }
+
+/* Header / account info */
+.app-header {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  background: linear-gradient(90deg, rgba(123,97,255,0.08), rgba(14,165,233,0.04));
+  border-radius: var(--radius);
+  text-align: left;
+}
+
+.user-info {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+/* Chat box */
+.chat-box {
+  background-color: #f7fafc;
+  border-radius: 8px;
+  padding: 12px;
+  height: 360px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chat bubbles */
+.user-msg {
+  align-self: flex-end;
+  background-color: #dbeafe; /* soft blue for user bubble */
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 14px 14px 0 14px;
+  margin: 8px 0;
+  max-width: 78%;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+}
+
+.bot-msg {
+  align-self: flex-start;
+  background-color: var(--chat-bg); /* purple-ish */
+  color: #2b2b2b;
+  padding: 10px 14px;
+  border-radius: 14px 14px 14px 0;
+  margin: 8px 0;
+  max-width: 78%;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+}
+
+.bot-msg.typing {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Input area */
+.input-area {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+input, textarea {
+  flex: 1;
+  padding: 12px;
+  font-size: 15.5px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: var(--text);
+}
+
+button {
+  padding: 10px 16px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: var(--accent);
+  color: #fff;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  box-shadow: 0 4px 10px rgba(123,97,255,0.08);
+}
+
+button:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(123,97,255,0.12); }
+
+button:disabled { background-color: #c7bfff; cursor: not-allowed; }
+
+/* Summary box */
+.summary-box {
+  margin-top: 20px;
+  border: 1px solid #e6edf6;
+  padding: 12px;
+  background-color: #fff;
+  border-radius: 10px;
+}
+
+.prompt-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.prompt-btn {
+  background-color: #d1fae5;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.12s ease;
+}
+
+.prompt-btn:hover { background-color: #b7f3d0; }
+
+.starter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.starter-btn {
+  background-color: #e6f6ff;
+  border: 1px solid #cfeefc;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.12s ease;
+}
+
+.starter-btn:hover { background-color: #d6f0ff; }
+
+/* Layout for ThinkingPartnerPage: left / chat / right */
+.app-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
+  gap: 20px;
+  max-width: none;
+  /* fill most of viewport so columns stretch vertically */
+  min-height: calc(100vh - 48px);
+  align-items: stretch;
+}
+
+.left-panel,
+.chat-panel,
+.right-panel {
+  background: #ffffff;
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: 0 4px 14px rgba(2,6,23,0.04);
+  border: 1px solid var(--panel-border);
+}
+
+.left-panel {
+  min-height: 460px;
+  background: var(--dark-brown); /* darker left column */
+  position: relative; /* allow absolute-positioned info panel */
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 84px; /* reserve space so anchored settings button doesn't cover content */
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+  background: var(--chat-bg);
+}
+
+.chat-panel .chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.chat-panel .messages {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px 6px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(247,247,250,0.6), rgba(255,255,255,0.6));
+  margin-bottom: 12px;
+}
+
+/* IM-style message tiles (WhatsApp-like) */
+.messages { display: flex; flex-direction: column; gap: 8px; }
+.messages .msg {
+  display: inline-block;
+  max-width: 78%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(2,6,23,0.04);
+  word-break: break-word;
+  line-height: 1.35;
+}
+.messages .msg.assistant {
+  align-self: flex-start;
+  background: #ffffff; /* white bubble for assistant */
+  color: var(--text);
+  border: 1px solid rgba(2,6,23,0.04);
+}
+.messages .msg.user {
+  align-self: flex-end;
+  background: #DCF8C6; /* WhatsApp light green */
+  color: #062017; /* dark-green text for contrast */
+  border: 1px solid rgba(2,6,23,0.02);
+}
+
+/* small timestamp / meta (if added later) */
+.msg .meta { display: block; font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+
+.chat-panel .chat-input {
+  display: flex;
+  gap: 8px;
+}
+
+/* Settings button and user panel inside left panel */
+.left-panel .left-panel-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.left-panel .settings-container {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+}
+
+.settings-btn {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.settings-btn:hover { background: rgba(0,0,0,0.02); transform: translateY(-2px); }
+
+.settings-btn { display: inline-flex; align-items: center; gap: 8px; }
+.settings-avatar { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; }
+.settings-label { font-size: 0.95rem; color: var(--muted); }
+
+/* strong white settings button on dark left panel */
+.left-panel .settings-btn {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(2,6,23,0.16);
+}
+.left-panel .settings-btn .settings-label { color: #ffffff; font-weight: 700; }
+
+.user-info-panel {
+  position: absolute;
+  left: 12px;
+  bottom: 64px; /* sits above the settings button */
+  width: calc(100% - 24px);
+  background: #fff;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 8px 30px rgba(2,6,23,0.08);
+  z-index: 20;
+}
+
+/* panel open/close animation */
+.user-info-panel.closed { opacity: 0; transform: translateY(6px) scale(0.995); pointer-events: none; }
+.user-info-panel.open { opacity: 1; transform: translateY(0) scale(1); transition: transform 220ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease; }
+
+.user-info-top { display:flex; gap:10px; align-items:center; }
+.user-meta .user-name { font-weight: 700; }
+.user-bio { margin-top: 10px; font-size: 13px; color: #111827; }
+.user-email { margin-top: 8px; font-size: 13px; }
+.user-actions { display:flex; gap:8px; margin-top: 12px; }
+.user-actions .close-btn { margin-left: auto; }
+
+/* subtle page lively animations for panels */
+@keyframes floatIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.left-panel, .chat-panel, .right-panel { animation: floatIn 360ms ease both; }
+
+
+/* Ensure action buttons inside the user panel have dark text (override global button rule) */
+.prompt-btn { color: var(--text); }
+
+.right-panel__section + .right-panel__section {
+  margin-top: 8px; /* tighten vertical gap between right-panel sections */
+}
+
+.right-panel {
+  background: var(--right-bg);
+}
+
+/* Layout adjustments: make right-panel a vertical column and push the journal tile to the bottom */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.right-panel__section:last-of-type { margin-top: auto; }
+
+.info-tile { min-height: 220px; display: flex; flex-direction: column; }
+.info-body { flex: 1; overflow: auto; }
+
+/* Fancy Current State styling */
+.info-tile.current-state {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff, #f6f8ff);
+  border: 1px solid rgba(124, 95, 255, 0.08);
+}
+.current-state-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end; /* align heading lower so it sits closer to the tile below */
+  gap: 12px;
+}
+.phase-badge {
+  display: inline-block;
+  background: linear-gradient(90deg,#7b61ff,#0ea5e9);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 18px rgba(123,97,255,0.08);
+}
+.state-ornament { opacity: 0.18; transform: translateY(-6px); }
+
+/* Stand-out description tile inside Current State */
+.desc-tile {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1.6px solid #000; /* changed to black per request */
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,255,0.98));
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(123,97,255,0.03);
+}
+.desc-tile .desc-text { font-size: 0.98rem; font-style: italic; color: #0f1724; }
+.desc-block {
+  margin-top: 8px; /* reduce wasted vertical space */
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(123,97,255,0.03), rgba(14,165,233,0.01));
+  border-radius: 10px;
+  border: 1px solid rgba(123,97,255,0.04);
+}
+.desc-text { font-size: 0.98rem; font-style: italic; color: #0f1724; }
+
+.info-section.uncovered { margin-top: 12px; }
+.uncovered-list { list-style: none; padding: 0; margin: 6px 0 0 0; }
+.uncovered-list li { display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border-radius:8px; background: linear-gradient(180deg,#fff,#fbfdff); border:1px solid rgba(2,6,23,0.02); margin-bottom:8px; }
+.uncovered-list .li-icon { color: #f59e0b; font-weight: 700; margin-top:2px; }
+
+.info-section.suggestions { margin-top: 12px; }
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap; /* allow chips to wrap to next row, but each chip stays single-line */
+  gap: 6px;
+  margin-top: 8px;
+  justify-content: flex-start; /* left-align all chips */
+}
+.suggestion-chip {
+  background: white;
+  border: 1px solid rgba(123,97,255,0.08);
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(2,6,23,0.04);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  font-weight: 600;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem; /* smaller so each chip can fit on one line */
+  line-height: 1;
+  white-space: nowrap; /* prevent wrapping inside chip */
+}
+.suggestion-chip:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(123,97,255,0.08); }
+.suggestion-chip .chip-dot { color: rgba(123,97,255,0.9); margin-right:8px; }
+
+/* make h4 slightly bolder in info tiles */
+.info-tile h4 { margin: 0 0 8px 0; font-size: 0.98rem; }
+
+/* Journal tile and diary styles (inserted below right-panel) */
+.journal-tile {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff, #fbfdff);
+  align-items: center;
+  cursor: pointer;
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 6px 12px rgba(2,6,23,0.04);
+}
+.journal-tile:hover { transform: translateY(-4px); }
+.journal-icon { font-size: 28px; }
+.journal-meta .journal-title { font-weight: 700; }
+
+.diary-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fffaf7, #fff8f2);
+  border: 1px solid rgba(255,221,190,0.6);
+  box-shadow: 0 8px 28px rgba(2,6,23,0.06);
+}
+.diary-header { display:flex; justify-content:space-between; align-items:center; }
+.diary-title { font-weight:800; font-size:1rem; }
+.diary-date { font-size:0.85rem; }
+.diary-body { margin-top:10px; padding-left:10px; border-left: 2px dashed rgba(0,0,0,0.06); }
+.diary-line { padding: 8px 6px; background: repeating-linear-gradient(transparent, transparent 14px, rgba(0,0,0,0.012) 14px); margin-bottom: 6px; border-radius: 4px; }
+.diary-actions { display:flex; gap:8px; margin-top:12px; }
+
+/* Modal styles for full journal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.45); display:flex; align-items:center; justify-content:center; z-index:9999; }
+.modal.full-journal { /* width is controlled inline via style attribute (vw) */ max-width: 96vw; height: 75vh; max-height: 92vh; overflow: visible; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 18px 60px rgba(2,6,23,0.4); display:flex; flex-direction:column; position: relative; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+.modal-header input[type="range"] { width: 180px; }
+
+.font-picker { padding: 6px 8px; border-radius: 6px; border: 1px solid #e6edf6; background: white; font-size: 0.95rem; }
+.font-picker:focus { outline: 2px solid rgba(123,97,255,0.12); }
+
+/* Book binding spine on the left to give a physical journal feel */
+.modal.full-journal::before {
+  content: '';
+  position: absolute;
+  left: -46px;
+  top: 12px;
+  bottom: 12px;
+  width: 40px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #5b432e, #3b2b2b);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  transform: rotate(-1deg);
+}
+
+/* Decorative rings (subtle) */
+.modal.full-journal::after {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 28px;
+  bottom: 28px;
+  width: 8px;
+  background-image: radial-gradient(circle at 50% 20%, rgba(0,0,0,0.12) 0 2px, transparent 3px), radial-gradient(circle at 50% 50%, rgba(0,0,0,0.06) 0 2px, transparent 3px);
+  background-size: 8px 36px, 8px 36px;
+  background-repeat: repeat-y;
+  opacity: 0.9;
+}
+
+/* Title input should look like a small heading — italic and colored */
+.journal-input.title-input { font-style: italic; color: var(--accent); font-weight: 700; padding: 8px 10px; border: 1px solid rgba(230,237,246,0.9); background: transparent; }
+
+/* Make the content textarea feel like ruled paper */
+.journal-textarea {
+  width: 100%;
+  min-height: 240px; /* give more vertical space for writing */
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px solid #e6edf6;
+  resize: vertical;
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.6;
+  background: repeating-linear-gradient(transparent, transparent 28px, rgba(0,0,0,0.03) 28px);
+  color: #111827;
+}
+
+/* Handwritten feel for the live textarea */
+.journal-textarea {
+  font-family: 'Patrick Hand', 'Indie Flower', Georgia, serif;
+  font-size: 18px;
+  letter-spacing: 0.4px;
+  line-height: 2.0; /* more gap between lines for sparse writing */
+  padding-left: 20px;
+}
+
+/* Make each rendered note line look like a handwritten line with a curly underline */
+.note-line {
+  position: relative;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 6px;
+  font-family: 'Patrick Hand', 'Indie Flower', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.9;
+  color: #111827;
+}
+
+/* decorative curly underline using an inline SVG as repeating background */
+.note-line::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 10px;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='6' viewBox='0 0 24 6'><path d='M0 3 C4 0 8 6 12 3 C16 0 20 6 24 3' stroke='%236b7280' stroke-width='0.9' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: repeat-x;
+  background-size: 24px 8px;
+  opacity: 0.8;
+}
+
+/* also apply subtle curly lines behind the textarea content (large repeated pattern) */
+.journal-textarea { background-image: repeating-linear-gradient(transparent, transparent 36px, rgba(0,0,0,0.03) 36px), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='12' viewBox='0 0 48 12'><path d='M0 6 C8 0 16 12 24 6 C32 0 40 12 48 6' stroke='%236b7280' stroke-width='0.9' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat: repeat-y, repeat-x; background-position: left top, left 30px; }
+
+/* Notebook preview card: tune to look like an open page */
+.notebook-card { flex:1; background: repeating-linear-gradient(transparent, transparent 28px, rgba(0,0,0,0.03) 28px); padding:22px; border-radius:8px; border: 1px solid rgba(2,6,23,0.04); box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); }
+.note-head strong { font-style: italic; color: var(--accent); font-size: 1.05rem; }
+.note-head .muted { font-size: 0.85rem; color: var(--muted); }
+
+/* Make journal list and right area feel like facing pages */
+.modal-body { display:flex; gap: 18px; align-items: stretch; }
+.journal-list { width: 300px; background: #fffefc; border-radius:6px; padding:10px; border:1px solid rgba(0,0,0,0.03); }
+.journal-right { background: #ffffff; padding:10px; border-radius:6px; border:1px solid rgba(0,0,0,0.03); display:flex; flex-direction: column; }
+
+/* Slightly larger save button to feel like a control on the page */
+.journal-new-row .prompt-btn { padding: 8px 12px; }
+
+/* Book open animation */
+.modal.full-journal {
+  transform-origin: left center;
+  animation: journalOpen 260ms cubic-bezier(.2,.9,.2,1) both;
+}
+
+@keyframes journalOpen {
+  0% { transform: perspective(800px) rotateY(-8deg) translateX(-8px) scale(0.98); opacity: 0; }
+  60% { transform: perspective(800px) rotateY(-2deg) translateX(-2px) scale(0.995); opacity: 0.92; }
+  100% { transform: perspective(800px) rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+}
+
+/* Small action buttons inside preview */
+.notebook-card .prompt-btn { padding: 6px 10px; font-size: 0.88rem; }
+
+/* Slightly emphasize delete button red */
+.notebook-card .prompt-btn:nth-child(2) { background: #fee2e2; color: #7f1d1d; }
+
+/* When editing, make the textarea more obviously editable */
+.notebook-card textarea.journal-textarea { min-height: 260px; }
+.modal-body { display:flex; gap: 14px; align-items: flex-start; }
+.journal-list { width: 100%; }
+.journal-list ul { list-style:none; padding:0; margin:6px 0 12px 0; max-height:68vh; overflow:auto; }
+.journal-list-item { padding:10px; border-radius:8px; cursor:pointer; border:1px solid transparent; margin-bottom:8px; background: linear-gradient(180deg,#fff,#fbfdff); }
+.journal-list-item.active { border-color: rgba(123,97,255,0.12); box-shadow: 0 10px 28px rgba(123,97,255,0.06); }
+.jl-title { font-weight:700; }
+.jl-date { font-size:0.85rem; color: var(--muted); }
+.journal-new { margin-top: 12px; }
+.journal-new-row input.journal-input { width:100%; }
+.journal-new-row textarea.journal-textarea { width:100%; height:180px; }
+.journal-right { display:flex; flex-direction: column; gap: 12px; flex: 1; }
+.journal-preview { flex: 1; }
+
+/* layout for right side of modal */
+.journal-right { display:flex; flex-direction: column; gap: 12px; flex: 1; }
+.journal-preview { flex: 1; }
+.journal-new { margin-top: 8px; }
+.journal-input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #e6edf6; margin-bottom:8px; }
+.journal-textarea { width:100%; height:140px; padding:10px; border-radius:8px; border:1px solid #e6edf6; resize:vertical; font-family: inherit; }
+
+/* Notebook preview card - lined paper feel */
+.notebook-card { flex:1; background: repeating-linear-gradient(transparent, transparent 28px, rgba(0,0,0,0.03) 28px); padding:18px; border-radius:10px; border:1px solid rgba(2,6,23,0.04); }
+.note-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.note-body { padding-top:6px; }
+.note-line { padding: 6px 10px; margin-bottom:6px; background: rgba(255,255,255,0.6); border-radius:6px; color: var(--text); }
+
+/* Ensure journal modal and notebook preview use dark text for readability */
+.modal.full-journal, .modal.full-journal * { color: var(--text); }
+.journal-list-item, .jl-title, .jl-date, .journal-new h4 { color: var(--text); }
+.journal-input, .journal-textarea { color: var(--text); }
+
+/* Info tile used for Current State and other small cards */
+.info-tile {
+  padding: 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 6px 14px rgba(2,6,23,0.04);
+}
+.info-tile .info-body { margin-top: 8px; }
+
+
+
+.muted {
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+/* Headings */
+h3 { font-size: 1.05rem; margin: 0 0 6px 0; }
+/* give header a bit more breathing room under it */
+h3 { margin-bottom: 12px; }
+h4 { font-size: 0.98rem; margin: 0 0 6px 0; }
+
+/* Improve list readability */
+ul { padding-left: 20px; margin: 6px 0; }
+li { margin-bottom: 6px; }
+
+/* Thread button styles inside left panel */
+.thread-btn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(180deg, #fff, #fcfdff);
+  cursor: pointer;
+  color: var(--text);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.thread-btn {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 220ms ease;
+}
+.thread-btn:hover { transform: translateY(-6px); box-shadow: 0 10px 26px rgba(0,0,0,0.32); }
+.thread-btn.active {
+  background: linear-gradient(90deg, rgba(123,97,255,0.10), rgba(123,97,255,0.02));
+  border: 2px solid rgba(123,97,255,0.18);
+  box-shadow: 0 14px 36px rgba(123,97,255,0.08);
+  transform: translateY(-4px) scale(1.02);
+}
+
+/* Icon inside tile */
+.thread-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  background: linear-gradient(180deg, rgba(123,97,255,0.06), rgba(14,165,233,0.02));
+  margin-bottom: 10px;
+}
+
+/* Make thread tile text light when on dark background */
+.left-panel .thread-btn { background: linear-gradient(180deg, #fff, #fcfdff); color: var(--text); border: 1px solid rgba(2,6,23,0.04); }
+.left-panel .thread-title { color: var(--text); }
+.left-panel .thread-desc { color: var(--muted); }
+.left-panel .thread-time { color: rgba(31,41,55,0.6); }
+
+/* Settings button on dark left panel */
+.left-panel .settings-btn { border-color: rgba(255,255,255,0.08); color: #ffffff; }
+
+/* make the Active Threads header white on the dark left background */
+.left-panel h3 { color: var(--on-dark); }
+
+/* Right panel dark styling for Current State and exploration */
+.right-panel { background: var(--panel-dark); color: var(--on-dark); }
+/* keep the info-tile inner card light so it contrasts with the dark outer right panel */
+.right-panel .info-tile.current-state { background: linear-gradient(180deg, #ffffff, #fbfdff); border: 1px solid var(--panel-border); color: var(--text); box-shadow: 0 6px 14px rgba(2,6,23,0.04); }
+.right-panel .current-state-head .phase-badge { box-shadow: none; background: linear-gradient(90deg,#5b3b2b,#3b2b2b); color: #fff; }
+.right-panel .desc-text { color: #0f1724; }
+.right-panel .uncovered-list li { background: linear-gradient(180deg,#fff,#fbfdff); border: 1px solid rgba(2,6,23,0.02); }
+.right-panel .uncovered-list .li-icon { color: #f59e0b; }
+.right-panel .suggestion-chip { background: white; border: 1px solid rgba(123,97,255,0.08); color: var(--text); box-shadow: 0 6px 16px rgba(2,6,23,0.04); }
+.right-panel .suggestion-chip .chip-dot { color: rgba(123,97,255,0.9); }
+
+/* Journal tile on right should show as a light card inside the dark panel */
+.right-panel .journal-tile { background: linear-gradient(180deg,#fff,#fbfdff); border: 1px solid var(--panel-border); color: var(--text); }
+
+/* Per-thread icon color overrides */
+.left-panel [data-thread-id="t1"] .thread-icon { color: #8B5E3C; /* work bag brown */ border: 2px solid rgba(139,94,60,0.12); box-shadow: 0 6px 18px rgba(139,94,60,0.06) inset; }
+.left-panel [data-thread-id="t2"] .thread-icon { color: #FBBF24; /* moon yellow */ border: 2px solid rgba(251,191,36,0.12); box-shadow: 0 6px 18px rgba(251,191,36,0.06) inset; }
+
+/* improve icon outline and contrast on dark left background */
+.left-panel .thread-icon { background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(252,253,255,0.98)); }
+
+
+.thread-time { font-size: 12px; margin-top: 10px; opacity: 0.85; }
+
+/* pulsing ring for active tile */
+.thread-btn { position: relative; overflow: visible; }
+.thread-btn.active::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: radial-gradient(circle, rgba(123,97,255,0.045), rgba(123,97,255,0));
+  z-index: 0;
+  animation: pulse 2000ms ease-out infinite;
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+  60% { transform: translate(-50%, -50%) scale(1.06); opacity: 0.28; }
+  100% { transform: translate(-50%, -50%) scale(1.12); opacity: 0; }
+}
+
+/* Grid to make two large square tiles fill the left panel */
+.left-panel .thread-grid {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  /* let the grid take remaining space under the header instead of fixed calc */
+  flex: 1 1 auto;
+  min-height: 0; /* allow proper flex shrinking */
+  padding-top: 8px; /* reserve space so active tile translate doesn't overlap header */
+}
+
+.thread-title { font-weight: 700; font-size: 1.05rem; }
+.thread-desc { font-size: 0.85rem; margin-top: 6px; max-width: 92%; }
+
+/* Responsive: on small widths, make tiles flow into two columns and let height adjust */
+@media (max-width: 520px) {
+  .left-panel .thread-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: none;
+    height: auto;
+  }
+  .thread-btn { aspect-ratio: 1 / 1; }
+}
+
+@media (max-width: 360px) {
+  .left-panel { padding: 12px; }
+  .thread-icon { width: 54px; height: 54px; font-size: 26px; }
+}
+
+/* keyboard focus styles */
+.thread-btn:focus { outline: 3px solid rgba(123,97,255,0.14); transform: translateY(-6px); }
+.settings-btn:focus { outline: 3px solid rgba(123,97,255,0.12); }
+
+/* visually-hidden helper */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
