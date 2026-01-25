@@ -79,7 +79,7 @@ export default function LeftPanel({
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [API_BASE]);
 
   function renderUserInfo(user: User | null) {
     function handleSignOut() {
@@ -205,11 +205,10 @@ export default function LeftPanel({
 
         <div className="thread-grid" role="list" aria-describedby="threads-help">
           {threads.map((t, i) => (
-            <button
+              <button
               key={t.thread_id}
               data-thread-id={t.thread_id}
               ref={(el) => { btnRefs.current[i] = el; }}
-              role="listitem"
               className={`thread-btn ${t.thread_id === activeThreadId ? "active" : ""}`}
               onClick={() => onThreadSelect(t.thread_id)}
               aria-pressed={t.thread_id === activeThreadId}

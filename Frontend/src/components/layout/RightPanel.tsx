@@ -66,7 +66,7 @@ export default function RightPanel({
   summary: propSummary = null,
   threads = [],
 }: RightPanelProps) {
-  const modeConfig = mode ? MODE_HINTS[mode] : null;
+  // mode hints available in `MODE_HINTS` if needed
 
   // API base: allow overriding via `REACT_APP_API_BASE` or window.API_BASE
   const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
@@ -201,7 +201,7 @@ export default function RightPanel({
     }
   }
 
-  const latestEntry = entries[0] ?? null;
+  // latestEntry intentionally omitted to avoid unused-var lint warnings
 
   // modal width + font choice persistence
   useEffect(() => {
@@ -256,9 +256,10 @@ export default function RightPanel({
     if (!normalized) return [];
     const lines = normalized.split(/\n+/).map((l) => l.trim()).filter(Boolean);
     // detect explicit bullets or numbered lines
-    const bullets = lines.filter((l) => /^[-•*]\s+/.test(l) || /^\d+[\.\)]\s+/.test(l));
+    const bullets = lines.filter((l) => /^[-•*]\s+/.test(l) || /^\d+[.)]\s+/.test(l));
     if (bullets.length) {
-      return bullets.map((l) => l.replace(/^[-•*\d\.\)\s]+/, '').trim());
+      // remove a single leading bullet marker or a single leading numbered marker like "1." or "1)"
+      return bullets.map((l) => l.replace(/^([-•*]|\d+[.)])\s*/, '').trim());
     }
     // fallback: split into sentences
     const sentences = normalized.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
@@ -648,10 +649,10 @@ export default function RightPanel({
       return <ul>{lines.map((l, i) => <li key={i}>{l.replace(/^[-•*]\s+/, "")}</li>)}</ul>;
     }
 
-    // detect numbered list (lines starting with '1.' etc)
-    const isNumbered = lines.every((l) => /^\d+\./.test(l));
+    // detect numbered list (lines starting with '1.' or '1)' etc)
+    const isNumbered = lines.every((l) => /^\d+[.)]/.test(l));
     if (isNumbered) {
-      return <ol>{lines.map((l, i) => <li key={i}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>;
+      return <ol>{lines.map((l, i) => <li key={i}>{l.replace(/^\d+[.)]\s*/, "")}</li>)}</ol>;
     }
 
     // otherwise render paragraphs for double-newline separated blocks
