@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+openai
+python-dotenv
+PyJWT
+pytest
+passlib[bcrypt]
+scikit-learn
+joblib
+
+#fastapi → backend framework
+
+#uvicorn → runs the FastAPI server
+
+#openai → call the OpenAI / ChatGPT API
+
+#python-dotenv → load API keys from .env file (very important)

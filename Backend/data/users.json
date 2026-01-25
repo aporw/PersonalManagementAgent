@@ -1,0 +1,20 @@
+{
+  "u_82b9": {
+    "user_id": "u_82b9",
+    "name": "Asha Patel",
+    "email": "asha.patel@example.com",
+    "password": "$pbkdf2-sha256$29000$3Buj1FprLQXA.N/b2/v/Pw$01Iw5Uf0fpWSHGYgKjd.3/eIHFsiGUk6dL1K.HAa.KE",
+    "role": "Product Designer",
+    "created_at": "2026-01-24T00:00:00Z",
+    "tokens_left": 6
+  },
+  "u1769403956": {
+    "user_id": "u1769403956",
+    "name": "Smoke Test",
+    "email": "smoke+test@example.com",
+    "password": "$pbkdf2-sha256$29000$LmWs1RrDuJcSwrj3nhNizA$FmGw2wMShYZ8yQlh/8B/6YUkdzxSqUcS2aPIfZo699w",
+    "tokens_left": 500,
+    "birth_year": null,
+    "created_at": "2026-01-25T21:05:56.437714"
+  }
+}

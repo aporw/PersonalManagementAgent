@@ -143,5 +143,15 @@
     "role": "assistant",
     "content": "This assistant is restricted to personal topics (career, mental state, relationships, decision-making). For coding, general information, or other topics please use the appropriate tool or a general-purpose assistant.",
     "ts": "2026-01-11T01:56:10.260138"
+  },
+  {
+    "role": "user",
+    "content": "hi",
+    "ts": "2026-01-25T20:43:36.577351"
+  },
+  {
+    "role": "assistant",
+    "content": "Hi there! How are you doing today?",
+    "ts": "2026-01-25T20:43:37.077685"
   }
 ]

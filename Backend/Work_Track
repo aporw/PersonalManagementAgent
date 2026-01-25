@@ -1,0 +1,119 @@
+# Create main.py and App.js two main files for backend and front end
+
+# since chatgpt quota is not available, using mock messages, revert on Jan2
+
+# 
+
+Day 1–2: Data model (critical)
+
+    Define:
+
+    Thread
+
+    Session summary
+
+    Journal entry
+
+    User preference (tone, depth)
+
+    Even if fake data at first.
+
+Day 3–4: Left panel
+
+    Active Threads (static initially)
+
+    Journal list
+
+    Click → load content
+
+Day 5: Right panel
+
+    Current state label
+
+    Suggested action (hardcoded logic)
+
+    Live notes (even manual for now)
+
+Day 6–7: AI behavior tuning
+
+    Teach the model to:
+
+    Reflect before advising
+
+    Ask permission before deep dives
+
+    Offer summaries naturally
+
+    One last grounding check (important)
+
+    If a user leaves after 20 minutes, they should feel:
+
+    “I see my situation more clearly than before.”
+
+
+1️⃣ Sketch exact wireframe layout
+2️⃣ Write microcopy for every panel
+3️⃣ Define what the AI should remember vs forget
+4️⃣ Design first-time user experience (very important)
+
+
+
+[...document.head.querySelectorAll('style,link[rel="stylesheet"]')].map(n => n.outerHTML).slice(0,10).join('\n\n')
+
+backend:
+
+stop:
+pkill -f uvicorn       
+
+start:
+conda activate ai-consult
+
+uvicorn main:app --reload --host 127.0.0.1 --port 8000 &
+
+
+frontend:
+
+stop:
+lsof -i :3000
+
+conda activate ai-consult
+npm start
+
+
+
+
+Quick UI polish (10–30m)
+
+SVG Plus: Replace the + with a crisp inline SVG so it scales cleanly and you can style it easily.
+Circular Add Button: Make the gold add button a circular 28–32px button for better visual balance.
+Toast Notifications: Replace alert() with a small non-blocking toast component for actions like “Added to journal”.
+Tweak Button Height: Adjust Update Highlights height (e.g., to 28px or 36px) to match other UI.
+
+Functionality & UX (30–90m)
+
+Persist summaries server-side: POST edited tiles to the backend so edits survive across devices/sessions (requires small backend route).
+Auto-suggest insert improvements: Let suggestion clicks insert text and optionally auto-focus the input cursor at the end.
+Disable/Loading UX: Add an inline spinner or skeleton while /summary is running (better than text “Loading…”).
+Replace decorative SVG: Move or shrink the state-ornament SVG so it doesn't affect layout.
+
+Backend & behavior (30–90m)
+
+Server-side truncation: Move summary length limits to the backend prompt or post-process to keep client simpler.
+Save summaries API: Add a /summary/save endpoint to persist edited summaries (DB or file).
+Rate-limit / debounce: Debounce the Update Highlights action to avoid accidental repeated requests.
+
+Quality & testing (30–120m)
+
+Unit tests: Add Jest + React Testing Library tests for RightPanel and ChatPanel behaviors (suggestion dispatch, add-to-journal).
+E2E smoke: Add a small Cypress/Playwright smoke test to assert Update Highlights flow.
+
+Developer experience & CI (60–180m)
+
+Prettier/ESLint: Add or tighten formatting/lint rules and run automatic fixes.
+GitHub Actions: Add a simple workflow to run tests and lint on PRs.
+
+Recommendation
+
+If you want the fastest visible improvement: I can implement the SVG plus or toast notifications now.
+If you want functional durability: I can implement server-side summary persistence (needs backend change) next.
+Which one shall I do? If you prefer, tell me “Do SVG plus” or “Add toast component” (or pick another item) and I’ll start and show the patch.

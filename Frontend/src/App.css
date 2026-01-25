@@ -213,8 +213,16 @@ button:disabled { background-color: #c7bfff; cursor: not-allowed; }
   margin-bottom: 10px;
 }
 
+.chat-panel {
+  /* ensure the panel can shrink within the layout and allow its children to control overflow */
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
 .chat-panel .messages {
   flex: 1 1 auto;
+  min-height: 0; /* enable proper flex overflow behavior */
   overflow-y: auto;
   padding: 10px 6px;
   border-radius: 8px;
@@ -252,6 +260,10 @@ button:disabled { background-color: #c7bfff; cursor: not-allowed; }
 .chat-panel .chat-input {
   display: flex;
   gap: 8px;
+  /* keep input area visible at bottom of panel */
+  flex-shrink: 0;
+  background: transparent;
+  padding-top: 8px;
 }
 
 /* Settings button and user panel inside left panel */
@@ -262,9 +274,18 @@ button:disabled { background-color: #c7bfff; cursor: not-allowed; }
 }
 
 .left-panel .settings-container {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
+  /* Place the account area in normal flow below the thread grid so it doesn't overlap tiles */
+  position: static;
+  margin-top: 12px;
+  left: auto;
+  bottom: auto;
+}
+/* Make settings container span the panel width so inline account buttons fit */
+.left-panel .settings-container {
+  width: calc(100% - 24px);
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .settings-btn {
@@ -295,26 +316,117 @@ button:disabled { background-color: #c7bfff; cursor: not-allowed; }
 .user-info-panel {
   position: absolute;
   left: 12px;
-  bottom: 64px; /* sits above the settings button */
+  top: 12px; /* anchor to top so panel covers threads */
+  bottom: 12px; /* full-height inside left panel */
   width: calc(100% - 24px);
-  background: #fff;
-  border: 1px solid var(--panel-border);
+  background: #000000; /* black background per request */
+  color: #ffffff; /* white text */
+  border: 1px solid rgba(255,255,255,0.06);
   border-radius: 10px;
-  padding: 12px;
-  box-shadow: 0 8px 30px rgba(2,6,23,0.08);
-  z-index: 20;
+  padding: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  z-index: 60; /* sit on top of thread tiles */
+  overflow: auto; /* allow scrolling when content is tall */
+  display: flex;
+  flex-direction: column;
 }
 
-/* panel open/close animation */
-.user-info-panel.closed { opacity: 0; transform: translateY(6px) scale(0.995); pointer-events: none; }
-.user-info-panel.open { opacity: 1; transform: translateY(0) scale(1); transition: transform 220ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease; }
+/* animate from the bottom so the panel appears to open upwards */
+.user-info-panel { transform-origin: bottom center; }
 
-.user-info-top { display:flex; gap:10px; align-items:center; }
-.user-meta .user-name { font-weight: 700; }
-.user-bio { margin-top: 10px; font-size: 13px; color: #111827; }
-.user-email { margin-top: 8px; font-size: 13px; }
-.user-actions { display:flex; gap:8px; margin-top: 12px; }
+/* panel open/close animation */
+.user-info-panel.closed { opacity: 0; transform: translateY(8px) scale(0.995); pointer-events: none; transform-origin: bottom center; }
+.user-info-panel.open { opacity: 1; transform: translateY(0) scale(1); transition: transform 220ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease; transform-origin: bottom center; }
+
+.user-info-top { display:flex; flex-direction: column; gap:8px; margin-bottom:12px; }
+.user-name-row { display:block; }
+.user-email-row { display:block; }
+.user-name { font-weight: 700; color: #ffffff; font-size: 1.02rem; }
+.user-email { color: rgba(255,255,255,0.85); font-size: 0.92rem; }
+.user-actions-row { display:flex; flex-direction:column; gap:8px; align-items:flex-start; margin-top:6px; }
+
+/* make each action button a compact, consistent size that fits the panel */
+.user-actions-row .prompt-btn {
+  width: auto; /* shrink to content but constrained by max-width */
+  max-width: 180px;
+  padding: 6px 10px;
+  height: 34px;
+  line-height: 1;
+  font-size: 0.92rem;
+  border-radius: 6px;
+  text-align: left;
+}
+.user-actions-row .prompt-btn + .prompt-btn { margin-top: 6px; }
+
+/* arrange each major field as a full-width row */
+.user-info-panel > .user-info-top,
+.user-info-panel > .user-bio { width: 100%; }
+
+/* make name and email inline on smaller widths by wrapping */
+.user-meta-inline .user-name { font-size: 1rem; }
+.user-meta-inline .user-email { font-size: 0.9rem; opacity: 0.9; }
+
+/* make avatar stand out on black */
+.settings-avatar { background: rgba(255,255,255,0.06); border-radius: 8px; }
+
+/* style action buttons for dark panel */
+.user-actions .prompt-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+.user-actions .prompt-btn:hover { background: rgba(255,255,255,0.04); }
+
+/* Make the close button more visible on dark background */
+.user-info-panel button[aria-label="Close settings"] { color: rgba(255,255,255,0.7); }
 .user-actions .close-btn { margin-left: auto; }
+
+/* Account buttons when user is anonymous: make them long, thin, and side-by-side */
+.left-panel .settings-container .account-btn {
+  flex: 1 1 auto;
+  min-width: 80px;
+  height: 36px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* New thread tile should visually match the existing thread tiles (white card) */
+.left-panel .thread-grid .new-thread-btn {
+  background: linear-gradient(180deg, #fff, #fcfdff);
+  border: 1px dashed rgba(2,6,23,0.06);
+  color: var(--text);
+  box-shadow: 0 6px 12px rgba(2,6,23,0.04);
+}
+
+.left-panel .thread-grid .new-thread-btn .thread-icon {
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(252,253,255,0.98));
+}
+
+/* Make the new-thread tile less tall so it only fits title text */
+.left-panel .thread-grid .new-thread-btn {
+  padding: 6px 8px; /* reduce vertical whitespace */
+  justify-content: center;
+  min-height: 80px; /* keep modest height so tiles align but are compact */
+}
+.left-panel .thread-grid .new-thread-btn .thread-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+}
+.left-panel .thread-grid .new-thread-btn .thread-title {
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+.left-panel .thread-grid .new-thread-btn .thread-desc { display: none; }
+
+/* Account buttons: side-by-side, shrink width, allow two-line label inside button */
+.left-panel .settings-container { display: flex; flex-direction: row; gap: 12px; align-items: center; justify-content: center; width: auto; margin: 8px auto 0 auto; }
+.left-panel .settings-container .account-btn { flex: none; width: 110px; height: 68px; padding: 8px 10px; border-radius: 10px; font-weight: 700; font-size: 0.95rem; white-space: normal; display:flex; align-items:center; justify-content:center; }
+.left-panel .settings-container .account-btn + .account-btn { margin-left: 0; }
 
 /* subtle page lively animations for panels */
 @keyframes floatIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }

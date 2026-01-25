@@ -1,0 +1,14 @@
+{"text":"Hi","label":"smalltalk"}
+{"text":"Hello","label":"smalltalk"}
+{"text":"Hey, how are you?","label":"smalltalk"}
+{"text":"I feel anxious about my job interview","label":"personal"}
+{"text":"How can I improve my mental health?","label":"personal"}
+{"text":"I'm struggling with procrastination at work","label":"personal"}
+{"text":"What should I do about my relationship problems?","label":"personal"}
+{"text":"Where is the Eiffel Tower?","label":"factoid"}
+{"text":"What's the population of Tokyo?","label":"factoid"}
+{"text":"When was the Declaration of Independence signed?","label":"factoid"}
+{"text":"How do I write a for loop in Python?","label":"non_personal"}
+{"text":"How to implement quicksort in JavaScript?","label":"non_personal"}
+{"text":"How do I center a div using CSS?","label":"non_personal"}
+{"text":"Can you show me sample React component code?","label":"non_personal"}

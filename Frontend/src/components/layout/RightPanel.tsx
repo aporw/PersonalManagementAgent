@@ -128,10 +128,30 @@ export default function RightPanel({
   // load entries from localStorage or seeded
   useEffect(() => {
     try {
+      const uid = typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
+      const isAnon = !uid || uid.startsWith("anon_");
+
+      const starter: JournalEntry = {
+        entry_id: `j_starter`,
+        linked_session_id: "",
+        title: "Write your thought, it helps!",
+        content: "",
+        created_at: new Date().toISOString(),
+        source: "user_written",
+      };
+
+      // For anonymous users, always show the starter entry (and persist it)
+      if (isAnon) {
+        try { localStorage.setItem("ai_journal_entries", JSON.stringify([starter])); } catch (err) {}
+        setEntries([starter]);
+        return;
+      }
+
       const raw = localStorage.getItem("ai_journal_entries");
       if (raw) {
         setEntries(JSON.parse(raw));
       } else {
+        // Non-anonymous users: fall back to seeded/demo journal entries
         setEntries(seededJournal);
       }
     } catch (e) {
@@ -467,6 +487,18 @@ export default function RightPanel({
       fetchSummaryForThread(selectedThreadId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedThreadId]);
+
+  // Re-fetch summary when user signs in/out so authenticated data shows immediately
+  useEffect(() => {
+    const handler = () => {
+      const uid = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
+      if (!uid || uid.startsWith('anon_')) return; // nothing to fetch for anonymous
+      if (selectedThreadId) void fetchSummaryForThread(selectedThreadId);
+    };
+    if (typeof window !== 'undefined') window.addEventListener('ai_user_changed', handler as EventListener);
+    return () => { if (typeof window !== 'undefined') window.removeEventListener('ai_user_changed', handler as EventListener); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedThreadId]);
 
   // helpers to start editing and save/cancel

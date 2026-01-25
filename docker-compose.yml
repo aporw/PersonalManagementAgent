@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=production
+      - JWT_SECRET=change-me
+    volumes:
+      - ./Backend/data:/app/data
+    restart: unless-stopped

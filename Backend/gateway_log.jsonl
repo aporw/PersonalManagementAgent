@@ -1,0 +1,10 @@
+{"ts": "2026-01-25T20:02:59.948760", "subject": null, "text": "how to code", "allowed": false, "label": "non_personal", "prob": 0.49810446666850267, "source": "ml"}
+{"ts": "2026-01-25T20:03:11.840543", "subject": null, "text": "how to make me feel better", "allowed": false, "label": "non_personal", "prob": 0.5194081807249333, "source": "ml"}
+{"ts": "2026-01-25T20:03:37.304384", "subject": null, "text": "how to make me feel better", "allowed": false, "label": "non_personal", "prob": 0.5194081807249333, "source": "ml"}
+{"ts": "2026-01-25T20:03:52.153886", "subject": null, "text": "how to make me feel better", "allowed": false, "label": "non_personal", "prob": 0.5194081807249333, "source": "ml"}
+{"ts": "2026-01-25T20:36:25.852696", "subject": null, "text": "How can I make myself feel better?", "allowed": true, "label": "personal", "prob": 0.5500122900159232, "source": "ml"}
+{"ts": "2026-01-25T20:36:41.102902", "subject": null, "text": "how to make me feel better", "allowed": true, "label": "non_personal", "prob": 0.5194081807249333, "source": "ml"}
+{"ts": "2026-01-25T20:39:46.297299", "subject": null, "text": "movie", "allowed": true, "label": "personal", "prob": 0.5255903102640049, "source": "ml"}
+{"ts": "2026-01-25T20:40:02.519121", "subject": null, "text": "coding", "allowed": true, "label": "personal", "prob": 0.5255903102640049, "source": "ml"}
+{"ts": "2026-01-25T20:40:40.242081", "subject": null, "text": "so nothing is getting blocked.", "allowed": false, "label": "factoid", "prob": 0.479124379579779, "source": "ml"}
+{"ts": "2026-01-25T20:43:36.594660", "subject": null, "text": "hi", "allowed": true, "label": "smalltalk", "prob": 0.6314935474317412, "source": "ml"}
