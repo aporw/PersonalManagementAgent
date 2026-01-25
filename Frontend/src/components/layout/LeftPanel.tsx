@@ -196,7 +196,7 @@ export default function LeftPanel({
     }
     window.addEventListener('ai_user_changed', onUserChanged);
     return () => window.removeEventListener('ai_user_changed', onUserChanged);
-  }, []);
+  }, [API_BASE]);
 
   return (
     <aside className="left-panel">

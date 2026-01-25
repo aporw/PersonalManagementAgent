@@ -28,8 +28,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
   const [messages, setMessages] = useState<Message[]>([]);
   const [userMessageCount, setUserMessageCount] = useState<number>(0);
   const [showSignupModal, setShowSignupModal] = useState<boolean>(false);
-  const [signupName, setSignupName] = useState<string>("");
-  const [signupEmail, setSignupEmail] = useState<string>("");
+  // signupName / signupEmail removed: not used in UI (lint cleanup)
   const [authMode, setAuthMode] = useState<'login'|'create'>('create');
   const [loginEmail, setLoginEmail] = useState<string>("");
   const [loginPassword, setLoginPassword] = useState<string>("");

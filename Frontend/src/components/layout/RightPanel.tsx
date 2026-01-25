@@ -15,51 +15,7 @@ interface RightPanelProps {
   threads?: ThreadRef[];
 }
 
-const MODE_HINTS: Record<
-  DetectedMode,
-  {
-    label: string;
-    description: string;
-    suggestions: string[];
-  }
-> = {
-  exploring_options: {
-    label: "Exploration",
-    description: "Exploring options and clarifying ideas.",
-    suggestions: [
-      "Ask why this problem matters",
-      "Challenge your assumptions",
-      "Explore alternative angles",
-    ],
-  },
-  overwhelmed: {
-    label: "Overwhelmed",
-    description: "You're feeling overloaded or uncertain about where to start.",
-    suggestions: [
-      "Identify the smallest next step",
-      "Prioritize ruthlessly",
-      "Take a short break and return with fresh eyes",
-    ],
-  },
-  reflective: {
-    label: "Reflection",
-    description: "You're processing past actions or thoughts.",
-    suggestions: [
-      "What worked well?",
-      "What would you change?",
-      "What pattern do you notice?",
-    ],
-  },
-  decisive: {
-    label: "Decision Making",
-    description: "You're evaluating options and moving toward a choice.",
-    suggestions: [
-      "List pros and cons",
-      "Define success criteria",
-      "Identify irreversible decisions",
-    ],
-  },
-};
+// MODE_HINTS removed (unused) to satisfy linting rules
 
 export default function RightPanel({
   mode,
@@ -579,7 +535,7 @@ export default function RightPanel({
     // show toast with Undo action wired to a global undo event
     window.dispatchEvent(new CustomEvent('ai_toast', {
       detail: {
-        message: `Added \"${entry.title}\" to your journal.`,
+        message: `Added "${entry.title}" to your journal.`,
         kind: 'success',
         actionLabel: 'Undo',
         actionEvent: 'undo_journal_add',
@@ -968,7 +924,7 @@ export default function RightPanel({
 }
 
 // Small form component for creating a journal entry (kept local)
-function JournalForm({ onSave }: { onSave: (e: JournalEntry) => void }) {
+export function JournalForm({ onSave }: { onSave: (e: JournalEntry) => void }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
