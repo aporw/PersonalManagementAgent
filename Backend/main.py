@@ -30,11 +30,31 @@ app = FastAPI()
 # === CORS Setup ===
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React dev server
+    allow_origins=["http://localhost:3000"],  # React dev server; replaced below if FRONTEND_ORIGINS is set
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Allow configuring allowed origins via env var `FRONTEND_ORIGINS` (comma-separated).
+# Example: FRONTEND_ORIGINS="https://your-frontend.vercel.app,https://app.example.com"
+_frontend_origins = os.getenv("FRONTEND_ORIGINS")
+if _frontend_origins:
+    try:
+        _list = [o.strip() for o in _frontend_origins.split(",") if o.strip()]
+        # reconfigure middleware by replacing the existing middleware entry
+        for mw in list(app.user_middleware):
+            if getattr(mw, 'cls', None) is CORSMiddleware:
+                app.user_middleware.remove(mw)
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=_list,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    except Exception:
+        pass
 
 # ----- Data Models -----
 
@@ -571,7 +591,9 @@ def create_user(payload: dict, response: Response):
         token = create_token_for_user(user_id)
         # set httpOnly cookie for the token
         try:
-            response.set_cookie("auth_token", token, httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=JWT_EXP_DAYS * 24 * 3600)
+            # Set SameSite=None for cross-site cookies when running with secure cookies (production over HTTPS).
+            samesite_val = "none" if COOKIE_SECURE else "lax"
+            response.set_cookie("auth_token", token, httponly=True, secure=COOKIE_SECURE, samesite=samesite_val, max_age=JWT_EXP_DAYS * 24 * 3600)
         except Exception:
             pass
         result = {"ok": True, "user": out}
@@ -612,7 +634,8 @@ def login_user(payload: dict, response: Response):
                     ucopy.pop("password", None)
                     token = create_token_for_user(uid)
                     try:
-                        response.set_cookie("auth_token", token, httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=JWT_EXP_DAYS * 24 * 3600)
+                        samesite_val = "none" if COOKIE_SECURE else "lax"
+                        response.set_cookie("auth_token", token, httponly=True, secure=COOKIE_SECURE, samesite=samesite_val, max_age=JWT_EXP_DAYS * 24 * 3600)
                     except Exception:
                         pass
                     result = {"ok": True, "user": ucopy}
@@ -633,7 +656,8 @@ def login_user(payload: dict, response: Response):
                     ucopy.pop("password", None)
                     token = create_token_for_user(uid)
                     try:
-                        response.set_cookie("auth_token", token, httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=JWT_EXP_DAYS * 24 * 3600)
+                        samesite_val = "none" if COOKIE_SECURE else "lax"
+                        response.set_cookie("auth_token", token, httponly=True, secure=COOKIE_SECURE, samesite=samesite_val, max_age=JWT_EXP_DAYS * 24 * 3600)
                     except Exception:
                         pass
                     result = {"ok": True, "user": ucopy}
@@ -653,7 +677,8 @@ def login_user(payload: dict, response: Response):
                 ucopy.pop("password", None)
                 token = create_token_for_user(uid)
                 try:
-                    response.set_cookie("auth_token", token, httponly=True, samesite="lax", max_age=JWT_EXP_DAYS * 24 * 3600)
+                    samesite_val = "none" if COOKIE_SECURE else "lax"
+                    response.set_cookie("auth_token", token, httponly=True, secure=COOKIE_SECURE, samesite=samesite_val, max_age=JWT_EXP_DAYS * 24 * 3600)
                 except Exception:
                     pass
                 return {"ok": True, "user": ucopy, "token": token}
