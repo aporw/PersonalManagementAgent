@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		libgomp1 \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY Backend/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 
 # Ensure pip/setuptools/wheel are recent so manylinux wheels are used when possible
 RUN pip install --upgrade pip setuptools wheel \
