@@ -1,7 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
+import FocusTrap from "./utils/FocusTrap";
 import "./App.css";
 
 function App() {
+  const [mobileLeftOpen, setMobileLeftOpen] = useState(false);
+  useEffect(() => {
+    try {
+      const root = document.querySelector('.App');
+      if (root) {
+        if (mobileLeftOpen) root.classList.add('mobile-left-open');
+        else root.classList.remove('mobile-left-open');
+      }
+    } catch (e) {}
+  }, [mobileLeftOpen]);
+
+  // listen for global close event (dispatched from LeftPanel close button)
+  useEffect(() => {
+    function onClose() { setMobileLeftOpen(false); }
+    window.addEventListener('close_mobile_left', onClose as EventListener);
+    return () => window.removeEventListener('close_mobile_left', onClose as EventListener);
+  }, []);
+
   const [message, setMessage] = useState("");
   const [conversation, setConversation] = useState([
     { role: "assistant", content: "Welcome back! How are you feeling today?" },
@@ -93,6 +112,18 @@ const handlePromptClick = (text) => {
 
   return (
     <div className="App">
+      {/* Mobile menu toggle */}
+      <button className="mobile-menu-btn" aria-label="Open menu" onClick={() => setMobileLeftOpen((s) => !s)}>
+        ☰
+      </button>
+      {/* Mobile drawer overlay and close button */}
+      {mobileLeftOpen && (
+        <>
+          <div className={"overlay open"} onClick={() => setMobileLeftOpen(false)} />
+          <button className="drawer-close-btn" aria-label="Close menu" onClick={() => setMobileLeftOpen(false)}>✕</button>
+          <FocusTrap active={mobileLeftOpen} containerSelector={".left-panel"} />
+        </>
+      )}
       {/* Header / account info */}
       <header className="app-header">
         <h2>Therapy Chat</h2>

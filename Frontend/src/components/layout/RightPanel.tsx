@@ -1,5 +1,6 @@
 import { DetectedMode, SessionSummary, JournalEntry } from "../../types/thinking";
 import { useState, useEffect, useRef } from "react";
+import FocusTrap from "../../utils/FocusTrap";
 import { createPortal } from "react-dom";
 import { journalEntries as seededJournal } from "../../data/journal";
 import "./RightPanel.css";
@@ -64,6 +65,17 @@ export default function RightPanel({
   const [draftSuggested, setDraftSuggested] = useState<string | undefined>(undefined);
   const [recentlyAdded, setRecentlyAdded] = useState<{ entry_id: string; section: "current" | "uncovered" | "suggested" } | null>(null);
   const undoTimerRef = useRef<number | null>(null);
+
+  // mobile bottom-sheet state: which section is open on mobile
+  const [mobileSheetSection, setMobileSheetSection] = useState<null | "current" | "uncovered" | "suggested">(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+    check();
+    try { window.addEventListener('resize', check); } catch (e) {}
+    return () => { try { window.removeEventListener('resize', check); } catch (e) {} };
+  }, []);
 
   const EDIT_KEY_PREFIX = "ai_edited_summary_";
 
@@ -473,6 +485,13 @@ export default function RightPanel({
     if (section === "suggested") setDraftSuggested(fetchedSummary.suggested_next_steps ?? "");
   }
 
+  function openMobileSheet(section: "current" | "uncovered" | "suggested") {
+    if (!isMobile) return;
+    setMobileSheetSection(section);
+  }
+
+  function closeMobileSheet() { setMobileSheetSection(null); }
+
   function cancelEditSection() {
     setEditingSection(null);
     setDraftCurrent(undefined);
@@ -705,7 +724,9 @@ export default function RightPanel({
                 {editingSection === 'current' ? (
                   <textarea value={draftCurrent ?? ''} onChange={(e) => setDraftCurrent(e.target.value)} style={{ width: '100%', minHeight: 120 }} />
                 ) : (
-                  renderRichText(fetchedSummary.current_state ?? (propSummary as any)?.current_state ?? (propSummary as any)?.summary_text ?? "No summary yet. Click 'Update Highlights'.")
+                  <div onClick={() => { if (isMobile) openMobileSheet('current'); }}>
+                    {renderRichText(fetchedSummary.current_state ?? (propSummary as any)?.current_state ?? (propSummary as any)?.summary_text ?? "No summary yet. Click 'Update Highlights'.")}
+                  </div>
                 )}
               </div>
             </div>
@@ -740,7 +761,9 @@ export default function RightPanel({
                 {editingSection === 'uncovered' ? (
                   <textarea value={draftUncovered ?? ''} onChange={(e) => setDraftUncovered(e.target.value)} style={{ width: '100%', minHeight: 120 }} />
                 ) : (
-                  renderRichText(fetchedSummary.what_we_uncovered ?? (propSummary && propSummary.key_points?.length ? propSummary.key_points.join("\n") : "—"))
+                  <div onClick={() => { if (isMobile) openMobileSheet('uncovered'); }}>
+                    {renderRichText(fetchedSummary.what_we_uncovered ?? (propSummary && propSummary.key_points?.length ? propSummary.key_points.join("\n") : "—"))}
+                  </div>
                 )}
               </div>
             </div>
@@ -774,7 +797,9 @@ export default function RightPanel({
                 {editingSection === 'suggested' ? (
                   <textarea value={draftSuggested ?? ''} onChange={(e) => setDraftSuggested(e.target.value)} style={{ width: '100%', minHeight: 120 }} />
                 ) : (
-                  renderRichText(fetchedSummary.suggested_next_steps ?? "—")
+                  <div onClick={() => { if (isMobile) openMobileSheet('suggested'); }}>
+                    {renderRichText(fetchedSummary.suggested_next_steps ?? "—")}
+                  </div>
                 )}
 
               {/* suggestion chips removed here — suggestions are dispatched to ChatPanel for insertion into the chat input */}
@@ -809,8 +834,40 @@ export default function RightPanel({
               <div
                 className={`modal full-journal`}
                 style={{ width: `${modalWidth}vw` }}
-                onClick={(e) => e.stopPropagation()}
-              >
+                onClick={(e) => e.stopPropagation()}>
+
+          {/* Mobile bottom-sheet for expanded summary sections */}
+          {mobileSheetSection && typeof document !== 'undefined' ? (
+            <div>
+              <div className="overlay open" onClick={closeMobileSheet} />
+              <div className={`bottom-sheet open`}>
+                <button className="sheet-close" aria-label="Close" onClick={closeMobileSheet}>✕</button>
+                <h4 style={{ marginTop: 8, marginBottom: 8, fontWeight: 700 }}>{mobileSheetSection === 'current' ? 'Current state' : mobileSheetSection === 'uncovered' ? "What we've uncovered" : 'Suggested next steps'}</h4>
+                <div style={{ marginTop: 8 }}>
+                  {mobileSheetSection === 'current' ? (
+                    editingSection === 'current' ? (
+                      <textarea value={draftCurrent ?? ''} onChange={(e) => setDraftCurrent(e.target.value)} style={{ width: '100%', minHeight: 200 }} />
+                    ) : (
+                      renderRichText(fetchedSummary.current_state ?? (propSummary as any)?.current_state ?? "No summary yet.")
+                    )
+                  ) : mobileSheetSection === 'uncovered' ? (
+                    editingSection === 'uncovered' ? (
+                      <textarea value={draftUncovered ?? ''} onChange={(e) => setDraftUncovered(e.target.value)} style={{ width: '100%', minHeight: 200 }} />
+                    ) : (
+                      renderRichText(fetchedSummary.what_we_uncovered ?? "—")
+                    )
+                  ) : (
+                    editingSection === 'suggested' ? (
+                      <textarea value={draftSuggested ?? ''} onChange={(e) => setDraftSuggested(e.target.value)} style={{ width: '100%', minHeight: 200 }} />
+                    ) : (
+                      renderRichText(fetchedSummary.suggested_next_steps ?? "—")
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <FocusTrap active={!!mobileSheetSection} containerSelector={".bottom-sheet"} />
                 <div className="modal-header">
                   <h3>Your Journal</h3>
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>

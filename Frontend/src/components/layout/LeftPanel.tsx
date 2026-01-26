@@ -204,6 +204,14 @@ export default function LeftPanel({
   return (
     <aside className="left-panel">
       <div className="left-panel-inner">
+        <button
+          className="inner-close-btn"
+          aria-label="Close menu"
+          onClick={() => { try { window.dispatchEvent(new CustomEvent('close_mobile_left')); } catch (e) { } }}
+          style={{ display: 'none' }}
+        >
+          ✕
+        </button>
         <h3>Active Threads</h3>
 
         <div className="thread-grid" role="list" aria-describedby="threads-help">

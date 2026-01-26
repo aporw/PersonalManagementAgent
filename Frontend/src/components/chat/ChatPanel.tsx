@@ -30,6 +30,8 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [userMessageCount, setUserMessageCount] = useState<number>(0);
+  const [welcomeShown, setWelcomeShown] = useState<boolean>(false);
+  const welcomeButtonRef = useRef<HTMLButtonElement | null>(null);
   const [showSignupModal, setShowSignupModal] = useState<boolean>(false);
   // signupName / signupEmail removed: not used in UI (lint cleanup)
   const [authMode, setAuthMode] = useState<'login'|'create'>('create');
@@ -61,7 +63,26 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
       const cnt = Number(localStorage.getItem("ai_user_msg_count") || "0") || 0;
       setUserMessageCount(cnt);
     }
+    try {
+      const shown = localStorage.getItem('ai_welcome_shown');
+      setWelcomeShown(Boolean(shown));
+    } catch (e) {}
   }, []);
+
+  // Focus the welcome dismiss button when banner is shown for accessibility
+  useEffect(() => {
+    try {
+      const uid = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
+      const isAnon = !!uid && uid.startsWith('anon_');
+      const isNewUser = isAnon && messages.length === 0 && (userMessageCount === 0);
+      if (!welcomeShown && isNewUser) {
+        setTimeout(() => {
+          try { welcomeButtonRef.current?.focus(); } catch (e) {}
+        }, 50);
+      }
+    } catch (e) {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [welcomeShown, messages.length, userMessageCount]);
 
   // listen for suggestion updates from RightPanel
   useEffect(() => {
@@ -379,6 +400,38 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
 
   return (
     <div className="chat-panel">
+      {/* Welcome banner for new anonymous users */}
+      {(() => {
+        try {
+          const uid = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
+          const isAnon = !!uid && uid.startsWith('anon_');
+          const isNewUser = isAnon && messages.length === 0 && (userMessageCount === 0);
+          if (isNewUser && !welcomeShown) {
+            return (
+              <div className="welcome-banner" role="region" aria-label="Welcome">
+                <div className="welcome-text">
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 6, color: '#ffffff' }}>Welcome to Altar</div>
+                  <div style={{ color: '#e6f3ff', marginBottom: 6 }}>Use this to:</div>
+                  <ul>
+                    <li>untangle work or career thoughts</li>
+                    <li>talk through stress or anxiety</li>
+                    <li>plan your day or week</li>
+                    <li>get conversation summarized and suggested next steps</li>
+                    <li>write privately in your journal</li>
+                  </ul>
+                </div>
+                <div className="welcome-actions">
+                  <button ref={welcomeButtonRef} className="prompt-btn" onClick={() => {
+                    try { localStorage.setItem('ai_welcome_shown', '1'); } catch (e) {}
+                    setWelcomeShown(true);
+                  }}>Got it</button>
+                </div>
+              </div>
+            );
+          }
+        } catch (e) {}
+        return null;
+      })()}
       <div className="chat-header">
         <h3>{activeThread?.title ?? "Thinking space"}</h3>
       </div>
@@ -468,7 +521,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
                       try {
                         setAuthLoading(true);
                         const payload = { email: (loginEmail || "").trim(), password: loginPassword };
-                        console.log('login attempt', { email: payload.email });
+                        pushDebug(`login attempt ${payload.email}`);
                         const res = await fetch(`${API_BASE}/users/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                         if (!res.ok) {
                           const txt = await res.text().catch(() => '');
