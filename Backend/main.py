@@ -84,7 +84,8 @@ class SummaryRequest(BaseModel):
     last_summary: t.Optional[str] = None
 
 class SummaryResponse(BaseModel):
-    summary: str
+    # summary may be a structured object with keys: current_state, what_we_uncovered, suggested_next_steps
+    summary: t.Any
 
 class NewMessage(BaseModel):
     user_id: str
@@ -1224,7 +1225,8 @@ def summary_from_conversation(req: SummaryRequest, request: Request):
         "suggested_next_steps": process_suggested(suggested),
     }
 
-    return {"summary": json.dumps(processed)}
+    # Return structured JSON (not a serialized string) so clients can consume directly.
+    return {"summary": processed}
 
 
 @app.post("/summary/save")
