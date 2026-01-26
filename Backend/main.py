@@ -15,12 +15,22 @@ import re
 from datetime import timedelta
 from passlib.context import CryptContext
 
-# Load environment variables from Backend/.env and override any existing shell vars
+# Load environment variables from Backend/.env for local/dev only.
+# In production we should NOT override the environment provided by the platform
+# (Render, Heroku, etc.) because that can inadvertently replace valid keys
+# (for example a valid OPENAI_API_KEY) with placeholders or empty values.
 env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(env_path, override=True)
-for k, v in dotenv_values(env_path).items():
-    if v is not None:
-        os.environ[k] = v
+# Determine if we're running in production via ENV or APP_ENV.
+_runtime_env = (os.getenv("ENV") or os.getenv("APP_ENV") or "").lower()
+if _runtime_env != "production":
+    # Load local .env without forcing an override of existing environment vars.
+    # This helps local development while preventing accidental replacement
+    # of platform-provided secrets in production.
+    try:
+        load_dotenv(env_path, override=False)
+    except Exception:
+        # ignore dotenv errors in constrained environments
+        pass
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
