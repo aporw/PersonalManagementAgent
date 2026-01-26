@@ -18,6 +18,9 @@ export default function LeftPanel({
 }: LeftPanelProps) {
   const [showSettings, setShowSettings] = useState(false);
   const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
+  const getAuthHeader = () => {
+    try { const t = localStorage.getItem('auth_token_fallback') || localStorage.getItem('token'); return t ? { Authorization: `Bearer ${t}` } : {}; } catch (e) { return {}; }
+  };
   const [me, setMe] = useState<User | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
@@ -178,7 +181,7 @@ export default function LeftPanel({
         return;
       }
       try {
-        const resp = await fetch(`${API_BASE}/users/${encodeURIComponent(uid)}`, { credentials: 'include' });
+        const resp = await fetch(`${API_BASE}/users/${encodeURIComponent(uid)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
         if (!resp.ok) {
           setMe(null);
           return;
@@ -332,10 +335,10 @@ export default function LeftPanel({
                     const uid = localStorage.getItem('user_id');
                     if (uid && !uid.startsWith('anon_')) {
                       try {
-                        const headers: any = { 'Content-Type': 'application/json' };
+                        const headers: any = { 'Content-Type': 'application/json', ...(getAuthHeader()) };
                         const r = await fetch(`${API_BASE}/users/${encodeURIComponent(uid)}/credits`, { method: 'POST', headers, credentials: 'include', body: JSON.stringify({ amount: AWARD }) });
                         if (r.ok) {
-                          const resp = await fetch(`${API_BASE}/users/${encodeURIComponent(uid)}`, { credentials: 'include' });
+                          const resp = await fetch(`${API_BASE}/users/${encodeURIComponent(uid)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
                           if (resp.ok) {
                             const data = await resp.json().catch(() => ({}));
                             setMe(data.user ?? null);

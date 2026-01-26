@@ -3,6 +3,9 @@ import { threads as mockThreads } from "../data/threads";
 import { Thread } from "../types/thinking";
 
 const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
+const getAuthHeader = () => {
+  try { const t = localStorage.getItem('auth_token_fallback') || localStorage.getItem('token'); return t ? { Authorization: `Bearer ${t}` } : {}; } catch (e) { return {}; }
+};
 
 export function useThreads() {
   // load threads from localStorage first, then fall back to mockThreads
@@ -25,7 +28,7 @@ export function useThreads() {
 
   async function fetchServerThreadsForUser(uid: string) {
     try {
-      const resp = await fetch(`${API_BASE}/threads/${encodeURIComponent(uid)}`, { credentials: 'include' });
+      const resp = await fetch(`${API_BASE}/threads/${encodeURIComponent(uid)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
       if (!resp.ok) throw new Error(`status ${resp.status}`);
       const data = await resp.json();
       const serverThreads = Array.isArray(data.threads) ? data.threads as Thread[] : [];

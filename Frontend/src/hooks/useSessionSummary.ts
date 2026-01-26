@@ -3,6 +3,9 @@ import { SessionSummary } from "../types/thinking";
 import { useEffect, useState } from "react";
 
 const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
+const getAuthHeader = () => {
+  try { const t = localStorage.getItem('auth_token_fallback') || localStorage.getItem('token'); return t ? { Authorization: `Bearer ${t}` } : {}; } catch (e) { return {}; }
+};
 
 export function useSessionSummary(sessionId?: string) {
   const [summary, setSummary] = useState<SessionSummary | null>(null);
@@ -25,7 +28,7 @@ export function useSessionSummary(sessionId?: string) {
         }
 
         // sessionId is used as thread id in this app
-        const resp = await fetch(`${API_BASE}/summary/saved/${encodeURIComponent(uid)}/${encodeURIComponent(sessionId)}`);
+        const resp = await fetch(`${API_BASE}/summary/saved/${encodeURIComponent(uid)}/${encodeURIComponent(sessionId)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
         if (!mounted) return;
         if (!resp.ok) {
           const s = sessionSummaries.find((ss) => ss.session_id === sessionId) || null;

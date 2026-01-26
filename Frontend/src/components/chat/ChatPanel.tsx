@@ -22,6 +22,9 @@ function makeId(prefix = "m") {
 export default function ChatPanel({ activeThread, session, preferences }: ChatPanelProps) {
   const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
   const DEBUG = false;
+  const getAuthHeader = () => {
+    try { const t = localStorage.getItem('auth_token_fallback') || localStorage.getItem('token'); return t ? { Authorization: `Bearer ${t}` } : {}; } catch (e) { return {}; }
+  };
 
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -214,7 +217,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
       if (DEBUG) console.debug("POST /message (user):", userPayload);
       pushDebug(`POST /message (user) -> ${API_BASE}/message`);
                         try {
-                          const headers: any = { "Content-Type": "application/json" };
+                          const headers: any = { "Content-Type": "application/json", ...(getAuthHeader()) };
                           void fetch(`${API_BASE}/message`, {
                             method: "POST",
                             headers,
@@ -251,9 +254,10 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
     try {
       const res = await fetch(`${API_BASE}/chat?stream=true`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(getAuthHeader()) },
         body: JSON.stringify({ user_id: userId, thread_id: threadId, message: text }),
         signal: ac.signal,
+        credentials: 'include',
       });
 
       pushDebug(`/chat response status: ${res.status} content-type=${res.headers.get("content-type")}`);
@@ -345,7 +349,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
         const assistantPayload = { user_id: userId, thread_id: threadId, role: "assistant", content: finalAssistantContent ?? messages.find((m) => m.id === assistantId)?.content ?? "" };
         pushDebug(`POST /message (assistant) -> ${API_BASE}/message (content len ${String(assistantPayload.content).length})`);
       try {
-        const headers: any = { "Content-Type": "application/json" };
+        const headers: any = { "Content-Type": "application/json", ...(getAuthHeader()) };
         void fetch(`${API_BASE}/message`, {
           method: "POST",
           headers,
@@ -463,7 +467,9 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
                     <button style={{ background: '#ffd166', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#0f1720' }} className="prompt-btn" disabled={authLoading} onClick={async () => {
                       try {
                         setAuthLoading(true);
-                        const res = await fetch(`${API_BASE}/users/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email: loginEmail, password: loginPassword }) });
+                        const payload = { email: (loginEmail || "").trim(), password: loginPassword };
+                        console.log('login attempt', { email: payload.email });
+                        const res = await fetch(`${API_BASE}/users/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                         if (!res.ok) {
                           const txt = await res.text().catch(() => '');
                           window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Login failed: ${res.status} ${txt}`, kind: 'error' } }));
@@ -471,6 +477,8 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
                         }
                         const data = await res.json();
                         const user = data.user;
+                        // persist fallback token for environments where cookies are blocked
+                        try { if (data.token) localStorage.setItem('auth_token_fallback', data.token); } catch (e) {}
                         if (user && user.user_id) {
                           localStorage.setItem('user_id', user.user_id);
                           // store token returned by server for authenticated requests
@@ -500,7 +508,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
                     <button style={{ background: '#2ea0ff', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#04253b' }} className="prompt-btn" disabled={authLoading} onClick={async () => {
                       try {
                         setAuthLoading(true);
-                        const payload: any = { name: createName, email: createEmail, password: createPassword };
+                        const payload: any = { name: (createName || "").trim(), email: (createEmail || "").trim(), password: createPassword };
                         if (createBirthYear) payload.birth_year = createBirthYear;
                         const res = await fetch(`${API_BASE}/users/create`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                         if (!res.ok) {
@@ -510,6 +518,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
                         }
                         const data = await res.json();
                         const newUser = data.user;
+                        try { if (data.token) localStorage.setItem('auth_token_fallback', data.token); } catch (e) {}
                         if (newUser && newUser.user_id) {
                           localStorage.setItem('user_id', newUser.user_id);
                           // server also sets httpOnly cookie; do not persist token in localStorage
@@ -580,7 +589,8 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
             try {
               const resp = await fetch(`${API_BASE}/messages/${encodeURIComponent(userId)}/${encodeURIComponent(activeThread.thread_id)}`, {
                 method: "DELETE",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...(getAuthHeader()) },
+                credentials: 'include',
               });
               if (!resp.ok) {
                 const body = await resp.text().catch(() => "");

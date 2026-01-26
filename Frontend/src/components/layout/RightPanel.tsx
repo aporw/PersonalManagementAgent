@@ -27,6 +27,13 @@ export default function RightPanel({
   // API base: allow overriding via `REACT_APP_API_BASE` or window.API_BASE
   const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
 
+  const getAuthHeader = () => {
+    try {
+      const t = localStorage.getItem('auth_token_fallback') || localStorage.getItem('token');
+      return t ? { Authorization: `Bearer ${t}` } : {};
+    } catch (e) { return {}; }
+  };
+
   const [openFull, setOpenFull] = useState(false);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
@@ -264,7 +271,7 @@ export default function RightPanel({
     const USER_ID = localStorage.getItem("user_id") || "u1";
     try {
       // fetch stored messages for the thread, then POST them to /summary so we explicitly pass the chat
-      const msgsRes = await fetch(`${API_BASE}/messages/${encodeURIComponent(USER_ID)}/${encodeURIComponent(threadId)}`);
+      const msgsRes = await fetch(`${API_BASE}/messages/${encodeURIComponent(USER_ID)}/${encodeURIComponent(threadId)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
       if (!msgsRes.ok) {
         throw new Error("Failed to load messages");
       }
@@ -274,7 +281,7 @@ export default function RightPanel({
       // fetch any server-saved summary first so we can include it as prior context
       let serverSavedSummary: any = {};
       try {
-        const savedRes = await fetch(`${API_BASE}/summary/saved/${encodeURIComponent(USER_ID)}/${encodeURIComponent(threadId)}`);
+        const savedRes = await fetch(`${API_BASE}/summary/saved/${encodeURIComponent(USER_ID)}/${encodeURIComponent(threadId)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
         if (savedRes.ok) {
           const sv = await savedRes.json();
           serverSavedSummary = sv?.summary || {};
@@ -285,7 +292,7 @@ export default function RightPanel({
 
       const summaryRes = await fetch(`${API_BASE}/summary`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...getAuthHeader() },
         body: JSON.stringify({ conversation, last_summary: serverSavedSummary && (typeof serverSavedSummary === 'string' ? serverSavedSummary : JSON.stringify(serverSavedSummary)) }),
       });
 
@@ -340,7 +347,7 @@ export default function RightPanel({
         let merged = { ...processedBase, ...edited };
         try {
           const USER_ID = localStorage.getItem("user_id") || "u1";
-          const savedRes = await fetch(`${API_BASE}/summary/saved/${encodeURIComponent(USER_ID)}/${encodeURIComponent(threadId)}`);
+          const savedRes = await fetch(`${API_BASE}/summary/saved/${encodeURIComponent(USER_ID)}/${encodeURIComponent(threadId)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
           if (savedRes.ok) {
             const sv = await savedRes.json();
             const serverSummary = sv?.summary || {};
@@ -491,7 +498,7 @@ export default function RightPanel({
       const USER_ID = localStorage.getItem("user_id") || "u1";
       void fetch(`${API_BASE}/summary/save`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({ user_id: USER_ID, thread_id: threadId, summary: {
           current_state: next.current_state,
           what_we_uncovered: next.what_we_uncovered,

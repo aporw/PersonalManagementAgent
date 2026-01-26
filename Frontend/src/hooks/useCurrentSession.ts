@@ -3,6 +3,9 @@ import { Session } from "../types/thinking";
 import { useEffect, useState } from "react";
 
 const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
+const getAuthHeader = () => {
+  try { const t = localStorage.getItem('auth_token_fallback') || localStorage.getItem('token'); return t ? { Authorization: `Bearer ${t}` } : {}; } catch (e) { return {}; }
+};
 
 export function useCurrentSession(activeThreadId?: string) {
   const [session, setSession] = useState<Session | null>(null);
@@ -24,7 +27,7 @@ export function useCurrentSession(activeThreadId?: string) {
           return;
         }
 
-        const resp = await fetch(`${API_BASE}/messages/${encodeURIComponent(uid)}/${encodeURIComponent(activeThreadId)}`);
+        const resp = await fetch(`${API_BASE}/messages/${encodeURIComponent(uid)}/${encodeURIComponent(activeThreadId)}`, { credentials: 'include', headers: { ...(getAuthHeader()) } });
         if (!mounted) return;
         if (!resp.ok) {
           // fallback to local static sessions if backend unavailable
