@@ -1,0 +1,12 @@
+.git
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+node_modules
+dist
+build
+.DS_Store
+*.rtf
+*.log
+data/

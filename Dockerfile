@@ -12,13 +12,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		libgomp1 \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY Backend/requirements.txt /app/requirements.txt
+# Copy requirements from the current build context. When using this Dockerfile
+# as the service root (for example when placed inside the `Backend/` folder
+# or when Render's service root is set to `Backend`), the requirements file
+# will be at `./requirements.txt`. Ensure the Docker build context is set
+# appropriately (Render will set the service root as the build context).
+COPY requirements.txt /app/requirements.txt
 
 # Ensure pip/setuptools/wheel are recent so manylinux wheels are used when possible
 RUN pip install --upgrade pip setuptools wheel \
 	&& pip install --no-cache-dir -r /app/requirements.txt
 
-COPY Backend /app
+# Copy the full backend source from the build context into the image.
+COPY . /app
 ENV PYTHONUNBUFFERED=1
 # Default port; Render will set $PORT at runtime. Keep a sane default for local testing.
 ENV PORT=8000
