@@ -3,7 +3,7 @@ import { useCurrentSession } from "../hooks/useCurrentSession";
 import { useSessionSummary } from "../hooks/useSessionSummary";
 import { useUserPreferences } from "../hooks/useUserPreferences";
 import React from "react";
-import LeftPanel from "../components/layout/LeftPanel";
+// LeftPanel intentionally not used on this page (landing-first UX)
 import ChatPanel from "../components/chat/ChatPanel";
 import RightPanel from "../components/layout/RightPanel";
 import MobileLanding from "./MobileLanding";
@@ -15,7 +15,6 @@ export default function ThinkingPartnerPage() {
     threads,
     activeThread,
     setActiveThreadId,
-    addThread,
   } = useThreads();
 
   const { session } = useCurrentSession(activeThread?.thread_id);
@@ -78,7 +77,7 @@ export default function ThinkingPartnerPage() {
       window.removeEventListener('open_signup_modal', onOpenSignup as EventListener);
       window.removeEventListener('auth_completed', onAuthCompleted as EventListener);
     };
-  }, []);
+  }, [setActiveThreadId]);
 
   return (
     <div>
