@@ -1,10 +1,16 @@
 import { Thread, Session, UserPreferences } from "../../types/thinking";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from 'react-dom';
 
 interface ChatPanelProps {
   activeThread?: Thread | null;
   session?: Session | null;
   preferences: UserPreferences;
+  onOpenRight?: () => void;
+  showSignupModal?: boolean;
+  setShowSignupModal?: (v: boolean) => void;
+  onlyShowModal?: boolean;
+  onBack?: () => void;
 }
 
 type Message = {
@@ -19,7 +25,7 @@ function makeId(prefix = "m") {
   return `${prefix}${Date.now()}${Math.floor(Math.random() * 1000)}`;
 }
 
-export default function ChatPanel({ activeThread, session, preferences }: ChatPanelProps) {
+export default function ChatPanel({ activeThread, session, preferences, onOpenRight, showSignupModal: propShowSignupModal, setShowSignupModal: propSetShowSignupModal, onlyShowModal: propOnlyShowModal, onBack, }: ChatPanelProps) {
   const API_BASE = (typeof window !== "undefined" && (window as any).API_BASE) || (process.env.REACT_APP_API_BASE as string) || "http://localhost:8000";
   const DEBUG = false;
   const getAuthHeader = () => {
@@ -98,28 +104,31 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
     return () => window.removeEventListener("ai_suggestions", handler as EventListener);
   }, []);
 
-  // listen for settings-triggered signup/login events (from LeftPanel)
+  // If the page-level controller passed modal props, prefer those; otherwise
+  // use internal state. Also listen for `open_signup_modal_hint` which carries
+  // a short-lived mode hint from the page when it mounts ChatPanel.
+  const modalOpen = typeof propShowSignupModal === 'boolean' ? propShowSignupModal : showSignupModal;
+  const setModalOpen = propSetShowSignupModal || setShowSignupModal;
+  const onlyShowModal = typeof propOnlyShowModal === 'boolean' ? propOnlyShowModal : false;
+
   useEffect(() => {
-    function openSignup(e: any) {
-      setShowSignupModal(true);
-      setHideModeToggle(false);
-      // set desired auth mode if provided in the event; if a mode is provided
-      // we treat this as a direct open and hide the top toggle to focus the selected form.
+    function hintHandler(e: any) {
       try {
         const mode = e?.detail?.mode;
         if (mode === 'login' || mode === 'create') {
           setAuthMode(mode);
           setHideModeToggle(true);
         }
+        setModalOpen(true);
       } catch (err) {}
     }
-    window.addEventListener('open_signup_modal', openSignup as EventListener);
-    return () => window.removeEventListener('open_signup_modal', openSignup as EventListener);
-  }, []);
+    window.addEventListener('open_signup_modal_hint', hintHandler as EventListener);
+    return () => window.removeEventListener('open_signup_modal_hint', hintHandler as EventListener);
+  }, [setModalOpen]);
 
   // Manage focus when modal opens/closes (accessibility)
   useEffect(() => {
-    if (showSignupModal) {
+    if (modalOpen) {
       try {
         prevFocusedRef.current = document.activeElement as HTMLElement;
         setTimeout(() => {
@@ -137,7 +146,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
         prevFocusedRef.current?.focus();
       } catch (e) {}
     }
-  }, [showSignupModal]);
+  }, [modalOpen]);
 
   // basic focus trap: keep tab inside modal
   function onModalKeyDown(e: React.KeyboardEvent) {
@@ -398,6 +407,130 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
     }
   }
 
+  function renderModalContent() {
+    const content = (
+      <div style={{ position: 'fixed', left: 0, right: 0, top: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 72, zIndex: 9999 }}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Account dialog"
+          ref={modalRef}
+          tabIndex={-1}
+          onKeyDown={onModalKeyDown}
+          style={{
+            background: 'linear-gradient(180deg, #06223a, #041a2b)',
+            padding: 18,
+            borderRadius: 12,
+            width: 520,
+            maxWidth: '96%',
+            boxShadow: '0 10px 40px rgba(2,6,23,0.65)',
+            border: '1px solid rgba(255,255,255,0.04)',
+            fontSize: 13,
+            color: '#e6f3ff'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: 6, fontSize: 16, fontWeight: 700, color: '#dbeeff' }}>Account</h3>
+            <p style={{ marginTop: 0, marginBottom: 12, color: '#c7ddff', fontSize: 13 }}>Create an account to save your threads, summaries and journals, or log in to view your existing data.</p>
+            {!hideModeToggle && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <button style={{ padding: '8px 12px', borderRadius: 8, border: authMode === 'login' ? '1px solid #f3c13a' : '1px solid transparent', background: authMode === 'login' ? '#fff6e6' : 'transparent', fontWeight: 600 }} onClick={() => setAuthMode('login')}>Log in</button>
+                <button style={{ padding: '8px 12px', borderRadius: 8, border: authMode === 'create' ? '1px solid #4aa3ff' : '1px solid transparent', background: authMode === 'create' ? '#eaf6ff' : 'transparent', fontWeight: 600 }} onClick={() => setAuthMode('create')}>Create account</button>
+              </div>
+            )}
+
+            {authMode === 'login' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <input ref={firstInputRef} placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
+                <input placeholder="Password" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button style={{ background: '#ffd166', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#0f1720' }} className="prompt-btn" disabled={authLoading} onClick={async () => {
+                    try {
+                      setAuthLoading(true);
+                      const payload = { email: (loginEmail || "").trim(), password: loginPassword };
+                      pushDebug(`login attempt ${payload.email}`);
+                      const res = await fetch(`${API_BASE}/users/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                      if (!res.ok) {
+                        const txt = await res.text().catch(() => '');
+                        window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Login failed: ${res.status} ${txt}`, kind: 'error' } }));
+                        return;
+                      }
+                      const data = await res.json();
+                      const user = data.user;
+                      try { if (data.token) localStorage.setItem('auth_token_fallback', data.token); } catch (e) {}
+                      if (user && user.user_id) {
+                        localStorage.setItem('user_id', user.user_id);
+                        localStorage.setItem('ai_user_msg_count', '0');
+                        setUserMessageCount(0);
+                        setModalOpen(false);
+                        setHideModeToggle(false);
+                        window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Logged in as ${user.name}`, kind: 'success' } }));
+                        window.dispatchEvent(new CustomEvent('ai_user_changed'));
+                        try { window.dispatchEvent(new CustomEvent('auth_completed')); } catch (e) {}
+                      }
+                    } catch (e) {
+                      window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Login failed: ${String(e)}`, kind: 'error' } }));
+                    } finally { setAuthLoading(false); }
+                  }}>Log in</button>
+                  <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.06)', padding: '8px 12px', borderRadius: 8, color: '#dbeeff' }} className="prompt-btn" onClick={() => { localStorage.setItem('ai_user_msg_count', '0'); setUserMessageCount(0); setModalOpen(false); try { window.dispatchEvent(new CustomEvent('auth_completed')); } catch (e) {} }}>Continue as guest</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <input ref={firstInputRef} placeholder="Name" value={createName} onChange={(e) => setCreateName(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
+                <input placeholder="Email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
+                <input placeholder="Password" type="password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
+                <input placeholder="Birth year (e.g. 1990)" value={createBirthYear} onChange={(e) => setCreateBirthYear(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button style={{ background: '#2ea0ff', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#04253b' }} className="prompt-btn" disabled={authLoading} onClick={async () => {
+                    try {
+                      setAuthLoading(true);
+                      const payload: any = { name: (createName || "").trim(), email: (createEmail || "").trim(), password: createPassword };
+                      if (createBirthYear) payload.birth_year = createBirthYear;
+                      const res = await fetch(`${API_BASE}/users/create`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                      if (!res.ok) {
+                        const txt = await res.text().catch(() => '');
+                        window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Create account failed: ${res.status} ${txt}`, kind: 'error' } }));
+                        return;
+                      }
+                      const data = await res.json();
+                      const newUser = data.user;
+                      try { if (data.token) localStorage.setItem('auth_token_fallback', data.token); } catch (e) {}
+                      if (newUser && newUser.user_id) {
+                        localStorage.setItem('user_id', newUser.user_id);
+                        localStorage.setItem('ai_user_msg_count', '0');
+                        setUserMessageCount(0);
+                        setModalOpen(false);
+                        setHideModeToggle(false);
+                        window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Account created: ${newUser.name}`, kind: 'success' } }));
+                        window.dispatchEvent(new CustomEvent('ai_user_changed'));
+                        try { window.dispatchEvent(new CustomEvent('auth_completed')); } catch (e) {}
+                      }
+                    } catch (e) {
+                      window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Create account failed: ${String(e)}`, kind: 'error' } }));
+                    } finally { setAuthLoading(false); }
+                  }}>Create account</button>
+                  <button style={{ background: '#2ea0ff', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#04253b' }} className="prompt-btn" onClick={() => { localStorage.setItem('ai_user_msg_count', '0'); setUserMessageCount(0); setModalOpen(false); try { window.dispatchEvent(new CustomEvent('auth_completed')); } catch (e) {} }}>Continue as guest</button>
+                </div>
+              </div>
+            )}
+        </div>
+      </div>
+    );
+
+    if (typeof document !== 'undefined' && document.body) {
+      try {
+        return createPortal(content, document.body);
+      } catch (e) {
+        return content;
+      }
+    }
+    return content;
+  }
+
+  if (onlyShowModal) {
+    return modalOpen ? (<div className="chat-panel">{renderModalContent()}</div>) : null;
+  }
+
+  // full UI return
   return (
     <div className="chat-panel">
       {/* Welcome banner for new anonymous users */}
@@ -432,8 +565,18 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
         } catch (e) {}
         return null;
       })()}
-      <div className="chat-header">
-        <h3>{activeThread?.title ?? "Thinking space"}</h3>
+      <div className="chat-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {typeof onBack === 'function' ? (
+            <button aria-label="Back to threads" onClick={() => { try { onBack && onBack(); } catch (e) {} }} style={{ marginRight: 6 }} className="prompt-btn">←</button>
+          ) : null}
+          <h3 style={{ margin: 0, flex: '0 1 auto' }}>{activeThread?.title ?? "Thinking space"}</h3>
+        </div>
+        {typeof onOpenRight === 'function' ? (
+          <button className="mobile-hamburger" aria-label="Toggle summary" onClick={() => onOpenRight()} style={{ marginLeft: 'auto' }}>
+            ☰
+          </button>
+        ) : null}
       </div>
 
       <div className="messages" aria-live="polite" ref={messagesRef}>
@@ -483,117 +626,7 @@ export default function ChatPanel({ activeThread, session, preferences }: ChatPa
       </div>
 
       {/* Signup modal shown after anonymous user reaches limit */}
-      {showSignupModal && (
-        <div style={{ position: 'fixed', left: 0, right: 0, top: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Account dialog"
-            ref={modalRef}
-            tabIndex={-1}
-            onKeyDown={onModalKeyDown}
-            style={{
-              background: 'linear-gradient(180deg, #06223a, #041a2b)',
-              padding: 18,
-              borderRadius: 12,
-              width: 520,
-              maxWidth: '96%',
-              boxShadow: '0 10px 40px rgba(2,6,23,0.65)',
-              border: '1px solid rgba(255,255,255,0.04)',
-              fontSize: 13,
-              color: '#e6f3ff'
-            }}>
-              <h3 style={{ marginTop: 0, marginBottom: 6, fontSize: 16, fontWeight: 700, color: '#dbeeff' }}>Account</h3>
-              <p style={{ marginTop: 0, marginBottom: 12, color: '#c7ddff', fontSize: 13 }}>Create an account to save your threads, summaries and journals, or log in to view your existing data.</p>
-              {!hideModeToggle && (
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                  <button style={{ padding: '8px 12px', borderRadius: 8, border: authMode === 'login' ? '1px solid #f3c13a' : '1px solid transparent', background: authMode === 'login' ? '#fff6e6' : 'transparent', fontWeight: 600 }} onClick={() => setAuthMode('login')}>Log in</button>
-                  <button style={{ padding: '8px 12px', borderRadius: 8, border: authMode === 'create' ? '1px solid #4aa3ff' : '1px solid transparent', background: authMode === 'create' ? '#eaf6ff' : 'transparent', fontWeight: 600 }} onClick={() => setAuthMode('create')}>Create account</button>
-                </div>
-              )}
-
-                  {authMode === 'login' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <input ref={firstInputRef} placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
-                  <input placeholder="Password" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <button style={{ background: '#ffd166', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#0f1720' }} className="prompt-btn" disabled={authLoading} onClick={async () => {
-                      try {
-                        setAuthLoading(true);
-                        const payload = { email: (loginEmail || "").trim(), password: loginPassword };
-                        pushDebug(`login attempt ${payload.email}`);
-                        const res = await fetch(`${API_BASE}/users/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
-                        if (!res.ok) {
-                          const txt = await res.text().catch(() => '');
-                          window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Login failed: ${res.status} ${txt}`, kind: 'error' } }));
-                          return;
-                        }
-                        const data = await res.json();
-                        const user = data.user;
-                        // persist fallback token for environments where cookies are blocked
-                        try { if (data.token) localStorage.setItem('auth_token_fallback', data.token); } catch (e) {}
-                        if (user && user.user_id) {
-                          localStorage.setItem('user_id', user.user_id);
-                          // store token returned by server for authenticated requests
-                          // server also sets httpOnly cookie; do not persist token in localStorage
-                          localStorage.setItem('ai_user_msg_count', '0');
-                          setUserMessageCount(0);
-                          setShowSignupModal(false);
-                          setHideModeToggle(false);
-                          window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Logged in as ${user.name}`, kind: 'success' } }));
-                          // notify other components (LeftPanel) that the user changed
-                          window.dispatchEvent(new CustomEvent('ai_user_changed'));
-                        }
-                      } catch (e) {
-                        window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Login failed: ${String(e)}`, kind: 'error' } }));
-                      } finally { setAuthLoading(false); }
-                    }}>Log in</button>
-                    <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.06)', padding: '8px 12px', borderRadius: 8, color: '#dbeeff' }} className="prompt-btn" onClick={() => { localStorage.setItem('ai_user_msg_count', '0'); setUserMessageCount(0); setShowSignupModal(false); }}>Continue as guest</button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <input ref={firstInputRef} placeholder="Name" value={createName} onChange={(e) => setCreateName(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
-                  <input placeholder="Email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
-                  <input placeholder="Password" type="password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
-                  <input placeholder="Birth year (e.g. 1990)" value={createBirthYear} onChange={(e) => setCreateBirthYear(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', background: '#072433', color: '#eaf4ff', fontSize: 13 }} />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <button style={{ background: '#2ea0ff', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#04253b' }} className="prompt-btn" disabled={authLoading} onClick={async () => {
-                      try {
-                        setAuthLoading(true);
-                        const payload: any = { name: (createName || "").trim(), email: (createEmail || "").trim(), password: createPassword };
-                        if (createBirthYear) payload.birth_year = createBirthYear;
-                        const res = await fetch(`${API_BASE}/users/create`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
-                        if (!res.ok) {
-                          const txt = await res.text().catch(() => '');
-                          window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Create account failed: ${res.status} ${txt}`, kind: 'error' } }));
-                          return;
-                        }
-                        const data = await res.json();
-                        const newUser = data.user;
-                        try { if (data.token) localStorage.setItem('auth_token_fallback', data.token); } catch (e) {}
-                        if (newUser && newUser.user_id) {
-                          localStorage.setItem('user_id', newUser.user_id);
-                          // server also sets httpOnly cookie; do not persist token in localStorage
-                          localStorage.setItem('ai_user_msg_count', '0');
-                          setUserMessageCount(0);
-                          setShowSignupModal(false);
-                          setHideModeToggle(false);
-                          window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Account created: ${newUser.name}`, kind: 'success' } }));
-                          // notify other components (LeftPanel) that the user changed
-                          window.dispatchEvent(new CustomEvent('ai_user_changed'));
-                        }
-                      } catch (e) {
-                        window.dispatchEvent(new CustomEvent('ai_toast', { detail: { message: `Create account failed: ${String(e)}`, kind: 'error' } }));
-                      } finally { setAuthLoading(false); }
-                    }}>Create account</button>
-                    <button style={{ background: '#2ea0ff', border: 'none', padding: '9px 14px', borderRadius: 8, fontWeight: 700, color: '#04253b' }} className="prompt-btn" onClick={() => { localStorage.setItem('ai_user_msg_count', '0'); setUserMessageCount(0); setShowSignupModal(false); }}>Continue as guest</button>
-                  </div>
-                </div>
-              )}
-            </div>
-        </div>
-      )}
+      {modalOpen && renderModalContent()}
 
       {/* Suggestion bar populated from RightPanel summary processing */}
       {suggestions && suggestions.length > 0 && (

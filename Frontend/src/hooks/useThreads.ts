@@ -34,7 +34,12 @@ export function useThreads() {
       const serverThreads = Array.isArray(data.threads) ? data.threads as Thread[] : [];
       if (serverThreads.length > 0) {
         persist(serverThreads);
-        setActiveThreadId((prev) => prev ?? serverThreads[0].thread_id);
+        try {
+          const prevent = (typeof window !== 'undefined' && (window as any).__preventThreadAutoSelect) ? true : false;
+          if (!prevent) {
+            setActiveThreadId((prev) => prev ?? serverThreads[0].thread_id);
+          }
+        } catch (e) {}
         return serverThreads;
       }
     } catch (e) {
